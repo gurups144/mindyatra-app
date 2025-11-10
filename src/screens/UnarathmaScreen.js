@@ -64,14 +64,7 @@ const UnarathmaScreen = ({ navigation }) => {
   if (step === 2 && report) {
     return (
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.white} onPress={() => navigation.goBack()} />
-          <Text style={styles.headerTitle}>Your Report</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <View style={styles.content}>
+        <View style={[styles.content, { marginTop: 16 }]}>
           {/* Report ID */}
           <View style={styles.reportIdCard}>
             <Text style={styles.reportIdLabel}>Report ID</Text>
@@ -156,14 +149,11 @@ const UnarathmaScreen = ({ navigation }) => {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} color={COLORS.white} onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Unarathma Service</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.content}>
         {/* Service Info */}
         <View style={styles.serviceInfo}>
@@ -268,22 +258,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    backgroundColor: COLORS.primary,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: SIZES.padding,
-  },
-  headerTitle: {
-    color: COLORS.white,
-    fontSize: SIZES.h3,
-    fontWeight: 'bold',
+  scrollContent: {
+    paddingVertical: 16,
   },
   content: {
     padding: SIZES.padding,
+    paddingTop: 0,
   },
   serviceInfo: {
     backgroundColor: COLORS.secondary + '20',

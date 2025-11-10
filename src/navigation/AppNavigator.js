@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons"; // Use Expo icons
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { COLORS } from "../utils/constants";
 
 // Import Screens
 import ActivityHubScreen from "../screens/ActivityHubScreen";
@@ -53,6 +54,7 @@ const AppNavigator = () => {
         headerStyle: { backgroundColor: "#6366f1" },
         headerTintColor: "#fff",
         headerTitleStyle: { fontWeight: "bold" },
+        headerBackTitleVisible: false,
       }}
     >
       <Stack.Screen
@@ -68,17 +70,36 @@ const AppNavigator = () => {
       <Stack.Screen
         name="AIAnalysis"
         component={AIAnalysisScreen}
-        options={{ title: "AI Text Analysis" }}
+        options={{
+          title: "AI Text Analysis",
+          headerBackTitle: " ", // Empty string to hide the back title
+          headerBackTitleVisible: false,
+        }}
       />
       <Stack.Screen
         name="DepressionMeter"
         component={DepressionMeterScreen}
-        options={{ title: "Depression Assessment" }}
+        options={{
+          title: "Depression Assessment",
+          headerBackTitle: " ", // Empty string to hide the back title
+          headerBackTitleVisible: false,
+        }}
       />
       <Stack.Screen
         name="Unarathma"
         component={UnarathmaScreen}
-        options={{ title: "Unarathma Service" }}
+        options={{
+          title: "Unarathma Service",
+          headerBackTitle: " ",
+          headerBackTitleVisible: false,
+          headerStyle: {
+            backgroundColor: COLORS.primary || '#6366f1', // Fallback color
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
       />
       <Stack.Screen
         name="ActivityHub"

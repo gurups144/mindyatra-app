@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "mindyatra-app",
-    "slug": "mindyatra-app",
+    "slug": "mindyatra",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.gurups004.mindyatra"
     },
     "web": {
       "output": "static",
@@ -43,6 +44,12 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5e72ce02-44fa-4e68-be2f-88b5e8ce4083"
+      }
+    },
+    "owner": "gurups004"
   }
 }
