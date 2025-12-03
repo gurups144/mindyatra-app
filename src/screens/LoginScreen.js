@@ -1,160 +1,160 @@
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
   TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Button from '../components/Button';
-import { COLORS, SIZES } from '../utils/constants';
-import { validateEmail } from '../utils/validation';
-import { authService } from '../services/auth';
+  View,
+} from "react-native";
+import Button from "../components/Button";
+import { authService } from "../services/auth";
+import { COLORS, SIZES } from "../utils/constants";
+import { validateEmail } from "../utils/validation";
+
+WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = ({ navigation }) => {
   const [step, setStep] = useState(1); // 1: Email input, 2: OTP verification
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [generatedOTP, setGeneratedOTP] = useState('');
+  const [generatedOTP, setGeneratedOTP] = useState("");
+
+  // Google Auth
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId:
+      "352100689801-rt7u1870kuo79rvvhig175l6gab1o7re.apps.googleusercontent.com",
+    // Add these if testing on specific platforms:
+    // androidClientId: 'YOUR_ANDROID_CLIENT_ID',
+    // iosClientId: 'YOUR_IOS_CLIENT_ID',
+    // webClientId: 'YOUR_WEB_CLIENT_ID',
+  });
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { authentication } = response;
+      handleGoogleSignIn(authentication.accessToken);
+    }
+  }, [response]);
+
+  const handleGoogleSignIn = async (accessToken) => {
+    try {
+      setLoading(true);
+      const userInfoResponse = await fetch(
+        "https://www.googleapis.com/userinfo/v2/me",
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      const userInfo = await userInfoResponse.json();
+
+      // Check if user exists or create new account
+      const result = await authService.loginWithGmail(userInfo.email);
+
+      if (result.success) {
+        navigation.replace("MainTabs");
+      } else {
+        Alert.alert("Error", "Failed to sign in with Google");
+      }
+    } catch (error) {
+      console.error("Google Sign In Error:", error);
+      Alert.alert("Error", "Google Sign-In failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleContinue = () => {
-    // Validate email
     if (!validateEmail(email)) {
-      setErrors({ email: 'Please enter a valid Gmail address' });
+      setErrors({ email: "Please enter a valid Gmail address" });
       return;
     }
 
-    // Check if it's a Gmail address
-    if (!email.toLowerCase().endsWith('@gmail.com')) {
-      setErrors({ email: 'Please use a Gmail address only' });
+    if (!email.toLowerCase().endsWith("@gmail.com")) {
+      setErrors({ email: "Please use a Gmail address only" });
       return;
     }
 
-    // For UI demo - assume new user, show terms
     setIsNewUser(true);
     setStep(1.5);
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    
-    try {
-      // TODO: Implement actual Google OAuth
-      // For now, simulate Google login
-      Alert.alert(
-        'Google Sign In',
-        'This would open Google authentication.\n\nFor demo: Enter your Gmail:',
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => setLoading(false) },
-          {
-            text: 'Continue',
-            onPress: async () => {
-              // Simulate Google providing email
-              const mockGoogleEmail = 'user@gmail.com';
-              const result = await authService.loginWithGmail(mockGoogleEmail);
-              setLoading(false);
-              
-              if (result.success) {
-                navigation.replace('MainTabs');
-              } else {
-                Alert.alert('Error', 'Failed to sign in with Google');
-              }
-            }
-          }
-        ]
-      );
-    } catch (error) {
-      setLoading(false);
-      Alert.alert('Error', 'Google Sign-In failed');
-    }
-  };
-
   const handleSendOTP = () => {
     if (!agreedToTerms) {
-      Alert.alert('Agreement Required', 'Please agree to Terms and Conditions');
+      Alert.alert("Agreement Required", "Please agree to Terms and Conditions");
       return;
     }
 
-    // Generate OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOTP(otpCode);
-    Alert.alert('OTP Sent', `Your OTP is: ${otpCode}`);
-    console.log('Demo OTP:', otpCode);
+    Alert.alert("OTP Sent", `Your OTP is: ${otpCode}`);
+    console.log("Demo OTP:", otpCode);
     setStep(2);
   };
 
   const handleVerifyOTP = async () => {
-    console.log('handleVerifyOTP called');
-    console.log('OTP entered:', otp);
-    console.log('Generated OTP:', generatedOTP);
-    
     if (!otp || otp.length !== 6) {
-      setErrors({ otp: 'Please enter a valid 6-digit OTP' });
+      setErrors({ otp: "Please enter a valid 6-digit OTP" });
       return;
     }
 
     if (otp !== generatedOTP) {
-      Alert.alert('Invalid OTP', 'Please enter the correct OTP');
+      Alert.alert("Invalid OTP", "Please enter the correct OTP");
       return;
     }
 
     setLoading(true);
-    console.log('Loading set to true');
-    
     try {
-      // Create account
-      console.log('Calling registerWithGmail...');
       const result = await authService.registerWithGmail(email);
-      console.log('Registration result:', result);
-      
-      setLoading(false);
-      console.log('Loading set to false');
-      
-      if (result && result.success) {
-        console.log('Registration successful, navigating to MainTabs...');
-        setTimeout(() => {
-          navigation.replace('MainTabs');
-        }, 100);
+      if (result?.success) {
+        navigation.replace("MainTabs");
       } else {
-        Alert.alert('Error', result?.error || 'Failed to create account');
+        Alert.alert("Error", result?.error || "Failed to create account");
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
+      Alert.alert("Error", "Something went wrong");
+    } finally {
       setLoading(false);
-      Alert.alert('Error', 'Something went wrong: ' + error.message);
     }
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
         <View style={styles.header}>
           <Ionicons name="brain" size={80} color={COLORS.primary} />
           <Text style={styles.title}>MindYatra</Text>
           <Text style={styles.subtitle}>Your Mental Wellness Journey</Text>
         </View>
 
-        {/* Step 1: Email Input */}
         {step === 1 && (
           <View style={styles.form}>
             <Text style={styles.formTitle}>Login / Sign Up</Text>
-            <Text style={styles.formSubtitle}>Enter your Gmail to continue</Text>
+            <Text style={styles.formSubtitle}>
+              Enter your Gmail to continue
+            </Text>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
+              <Ionicons
+                name="mail-outline"
+                size={20}
+                color={COLORS.gray}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="your.email@gmail.com"
@@ -167,11 +167,13 @@ const LoginScreen = ({ navigation }) => {
                 autoCapitalize="none"
               />
             </View>
-            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
 
-            <Button 
-              title="Continue" 
-              onPress={handleContinue} 
+            <Button
+              title="Continue"
+              onPress={handleContinue}
               loading={loading}
               style={styles.loginButton}
             />
@@ -182,28 +184,20 @@ const LoginScreen = ({ navigation }) => {
               <View style={styles.divider} />
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.googleButton}
-              onPress={handleGoogleSignIn}
-              disabled={loading}
+              onPress={() => promptAsync()}
+              disabled={!request || loading}
             >
               <Ionicons name="logo-google" size={20} color="#DB4437" />
               <Text style={styles.googleButtonText}>Sign in with Google</Text>
             </TouchableOpacity>
-
-            <View style={styles.infoBox}>
-              <Ionicons name="information-circle" size={20} color={COLORS.info} />
-              <Text style={styles.infoText}>
-                Gmail addresses only. Manual entry requires OTP verification.
-              </Text>
-            </View>
           </View>
         )}
 
-        {/* Step 1.5: Terms and Conditions for New Users */}
         {step === 1.5 && (
           <View style={styles.form}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.backButton}
               onPress={() => setStep(1)}
             >
@@ -211,7 +205,9 @@ const LoginScreen = ({ navigation }) => {
             </TouchableOpacity>
 
             <Text style={styles.formTitle}>Welcome to MindYatra!</Text>
-            <Text style={styles.formSubtitle}>You're signing up as a new user</Text>
+            <Text style={styles.formSubtitle}>
+              You're signing up as a new user
+            </Text>
 
             <View style={styles.emailDisplay}>
               <Ionicons name="mail" size={20} color={COLORS.primary} />
@@ -219,27 +215,26 @@ const LoginScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.termsContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.checkbox}
                 onPress={() => setAgreedToTerms(!agreedToTerms)}
               >
-                <Ionicons 
-                  name={agreedToTerms ? "checkbox" : "square-outline"} 
-                  size={24} 
-                  color={agreedToTerms ? COLORS.primary : COLORS.gray} 
+                <Ionicons
+                  name={agreedToTerms ? "checkbox" : "square-outline"}
+                  size={24}
+                  color={agreedToTerms ? COLORS.primary : COLORS.gray}
                 />
               </TouchableOpacity>
               <Text style={styles.termsText}>
-                I agree to the{' '}
-                <Text style={styles.termsLink}>Terms and Conditions</Text>
-                {' '}and{' '}
+                I agree to the{" "}
+                <Text style={styles.termsLink}>Terms and Conditions</Text> and{" "}
                 <Text style={styles.termsLink}>Privacy Policy</Text>
               </Text>
             </View>
 
-            <Button 
-              title="Send OTP" 
-              onPress={handleSendOTP} 
+            <Button
+              title="Send OTP"
+              onPress={handleSendOTP}
               loading={loading}
               disabled={!agreedToTerms}
               style={styles.loginButton}
@@ -247,10 +242,9 @@ const LoginScreen = ({ navigation }) => {
           </View>
         )}
 
-        {/* Step 2: OTP Verification */}
         {step === 2 && (
           <View style={styles.form}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.backButton}
               onPress={() => setStep(isNewUser ? 1.5 : 1)}
             >
@@ -259,12 +253,18 @@ const LoginScreen = ({ navigation }) => {
 
             <Text style={styles.formTitle}>Verify OTP</Text>
             <Text style={styles.formSubtitle}>
-              We've sent a 6-digit code to{'\n'}{email}
+              We've sent a 6-digit code to{"\n"}
+              {email}
             </Text>
 
             <View style={styles.otpContainer}>
               <View style={styles.inputContainer}>
-                <Ionicons name="key-outline" size={20} color={COLORS.gray} style={styles.inputIcon} />
+                <Ionicons
+                  name="key-outline"
+                  size={20}
+                  color={COLORS.gray}
+                  style={styles.inputIcon}
+                />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter 6-digit OTP"
@@ -280,20 +280,22 @@ const LoginScreen = ({ navigation }) => {
               {errors.otp && <Text style={styles.errorText}>{errors.otp}</Text>}
             </View>
 
-            <Button 
-              title={isNewUser ? "Create Account" : "Login"} 
-              onPress={handleVerifyOTP} 
+            <Button
+              title={isNewUser ? "Create Account" : "Login"}
+              onPress={handleVerifyOTP}
               loading={loading}
               style={styles.loginButton}
             />
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.resendContainer}
               onPress={() => {
-                const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+                const otpCode = Math.floor(
+                  100000 + Math.random() * 900000
+                ).toString();
                 setGeneratedOTP(otpCode);
-                Alert.alert('OTP Sent', `Your new OTP is: ${otpCode}`);
-                console.log('New OTP:', otpCode);
+                Alert.alert("OTP Sent", `Your new OTP is: ${otpCode}`);
+                console.log("New OTP:", otpCode);
               }}
             >
               <Text style={styles.resendText}>Didn't receive the code? </Text>
@@ -316,13 +318,13 @@ const styles = StyleSheet.create({
     padding: SIZES.padding * 2,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 60,
     marginBottom: 40,
   },
   title: {
     fontSize: SIZES.h1,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.primary,
     marginTop: SIZES.padding,
   },
@@ -336,7 +338,7 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: SIZES.h2,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.dark,
     marginBottom: SIZES.base,
   },
@@ -349,8 +351,8 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.padding,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.white,
     borderRadius: SIZES.radius,
     paddingHorizontal: SIZES.padding,
@@ -378,8 +380,8 @@ const styles = StyleSheet.create({
     marginTop: SIZES.padding,
   },
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: SIZES.padding * 2,
   },
   divider: {
@@ -391,12 +393,12 @@ const styles = StyleSheet.create({
     marginHorizontal: SIZES.padding,
     fontSize: SIZES.medium,
     color: COLORS.gray,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: COLORS.white,
     borderWidth: 2,
     borderColor: COLORS.lightGray,
@@ -407,16 +409,16 @@ const styles = StyleSheet.create({
   googleButtonText: {
     fontSize: SIZES.medium,
     color: COLORS.dark,
-    fontWeight: '600',
+    fontWeight: "600",
     marginLeft: SIZES.base,
   },
   infoBox: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.info + '20',
+    flexDirection: "row",
+    backgroundColor: COLORS.info + "20",
     padding: SIZES.padding,
     borderRadius: SIZES.radius,
     marginTop: SIZES.padding * 2,
-    alignItems: 'center',
+    alignItems: "center",
   },
   infoText: {
     flex: 1,
@@ -426,9 +428,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   emailDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary + '20',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.primary + "20",
     padding: SIZES.padding,
     borderRadius: SIZES.radius,
     marginBottom: SIZES.padding * 2,
@@ -437,11 +439,11 @@ const styles = StyleSheet.create({
     fontSize: SIZES.medium,
     color: COLORS.dark,
     marginLeft: SIZES.base,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   termsContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: SIZES.padding,
   },
   checkbox: {
@@ -455,14 +457,14 @@ const styles = StyleSheet.create({
   },
   termsLink: {
     color: COLORS.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   otpContainer: {
     marginTop: SIZES.padding,
   },
   resendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: SIZES.padding * 2,
   },
   resendText: {
@@ -472,7 +474,7 @@ const styles = StyleSheet.create({
   resendLink: {
     fontSize: SIZES.medium,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 

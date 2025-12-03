@@ -43,7 +43,8 @@
             "backgroundColor": "#6366f1"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {
