@@ -1,7 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as AuthSession from 'expo-auth-session';
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
+
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,6 +20,7 @@ import Button from "../components/Button";
 import { authService } from "../services/auth";
 import { COLORS, SIZES } from "../utils/constants";
 import { validateEmail } from "../utils/validation";
+// import * as AuthSession from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -32,20 +36,26 @@ const LoginScreen = ({ navigation }) => {
 
   // Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId:
-      "352100689801-rt7u1870kuo79rvvhig175l6gab1o7re.apps.googleusercontent.com",
-    // Add these if testing on specific platforms:
-    // androidClientId: 'YOUR_ANDROID_CLIENT_ID',
-    // iosClientId: 'YOUR_IOS_CLIENT_ID',
-    // webClientId: 'YOUR_WEB_CLIENT_ID',
-  });
+  expoClientId:
+    "352100689801-rt7u1870kuo79rvvhig175l6gab1o7re.apps.googleusercontent.com",
+  webClientId:
+    "352100689801-rt7u1870kuo79rvvhig175l6gab1o7re.apps.googleusercontent.com",
+    androidClientId: "352100689801-rt7u1870kuo79rvvhig175l6gab1o7re.apps.googleusercontent.com",
+    responseType: "id_token",
+  scopes: ["openid", "email", "profile"],
+  redirectUri: AuthSession.makeRedirectUri({ useProxy: true }),
+});
 
-  useEffect(() => {
-    if (response?.type === "success") {
-      const { authentication } = response;
-      handleGoogleSignIn(authentication.accessToken);
+console.log('Redirect URI:', AuthSession.makeRedirectUri({ useProxy: true }));
+
+useEffect(() => {
+  if (response?.type === "success") {
+    const idToken = response.params?.id_token;
+    if (idToken) {
+      sendTokenToBackend(idToken);
     }
-  }, [response]);
+  }
+}, [response]);
 
   const handleGoogleSignIn = async (accessToken) => {
     try {
@@ -74,6 +84,40 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+const sendTokenToBackend = async (idToken) => {
+  try {
+    setLoading(true);
+
+    const res = await fetch("https://mindyatra.in/Api/google_callback", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `credential=${encodeURIComponent(idToken)}`,
+    });
+
+    const data = await res.json();
+    console.log("Backend response:", data);
+
+    if (data.success) {
+      // Save session info locally
+      await AsyncStorage.setItem("user_id", data.user_id.toString());
+      await AsyncStorage.setItem("email", data.email);
+      await AsyncStorage.setItem("token", data.token);
+
+      navigation.replace("MainTabs");
+    } else {
+      Alert.alert("Login Failed", data.error);
+    }
+
+  } catch (err) {
+    console.error("Error:", err);
+    Alert.alert("Error", "Login failed");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   const handleContinue = () => {
     if (!validateEmail(email)) {
       setErrors({ email: "Please enter a valid Gmail address" });
@@ -89,45 +133,80 @@ const LoginScreen = ({ navigation }) => {
     setStep(1.5);
   };
 
-  const handleSendOTP = () => {
-    if (!agreedToTerms) {
-      Alert.alert("Agreement Required", "Please agree to Terms and Conditions");
-      return;
-    }
+const handleSendOTP = async () => {
+  if (!validateEmail(email)) {
+    setErrors({ email: "Please enter a valid email address" });
+    return;
+  }
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOTP(otpCode);
-    Alert.alert("OTP Sent", `Your OTP is: ${otpCode}`);
-    console.log("Demo OTP:", otpCode);
-    setStep(2);
-  };
+  setLoading(true);
+  try {
+    const formData = new FormData();
+    formData.append("email", email);
 
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      setErrors({ otp: "Please enter a valid 6-digit OTP" });
-      return;
-    }
+    const res = await fetch("https://mindyatra.in/Api/sendmail_otp_host_login", {
+      method: "POST",
+      body: formData,
+    });
 
-    if (otp !== generatedOTP) {
-      Alert.alert("Invalid OTP", "Please enter the correct OTP");
-      return;
-    }
+    const result = await res.text();
+    console.log("OTP Response:", result);
 
-    setLoading(true);
-    try {
-      const result = await authService.registerWithGmail(email);
-      if (result?.success) {
-        navigation.replace("MainTabs");
-      } else {
-        Alert.alert("Error", result?.error || "Failed to create account");
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      Alert.alert("Error", "Something went wrong");
-    } finally {
-      setLoading(false);
+    if (result === "1") {
+      Alert.alert("OTP Sent", "Please check your email for the OTP.");
+      setStep(2);
+    } else if (result === "3") {
+      Alert.alert("Email Not Registered", "This email is not found.");
+    } else {
+      Alert.alert("Error", "Failed to send OTP, try again.");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    Alert.alert("Error", "Network error");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+const handleVerifyOTP = async () => {
+  if (!otp || otp.length !== 6) {
+    setErrors({ otp: "Please enter a valid 6-digit OTP" });
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("otp", otp);
+
+    const res = await fetch("https://mindyatra.in/Api/verify_otp", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await res.json(); // expecting {success:true, user_id, email, token}
+    console.log("Verify Response:", result);
+
+    if (result.success) {
+      await AsyncStorage.setItem("user_id", result.user_id.toString());
+      await AsyncStorage.setItem("email", result.email);
+      await AsyncStorage.setItem("token", result.token);
+
+      navigation.replace("MainTabs");
+    } else {
+      Alert.alert("Invalid OTP", "Incorrect code, try again");
+    }
+  } catch (err) {
+    console.error(err);
+    Alert.alert("Error", "Network error");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <KeyboardAvoidingView

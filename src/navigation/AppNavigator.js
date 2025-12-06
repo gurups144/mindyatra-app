@@ -1,11 +1,11 @@
 // src/navigation/AppNavigator.js
-import { Ionicons } from "@expo/vector-icons"; // Use Expo icons
+import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from "react";
 import { COLORS } from "../utils/constants";
 
-// Import Screens
+// Screens
 import ActivityHubScreen from "../screens/ActivityHubScreen";
 import AIAnalysisScreen from "../screens/AIAnalysisScreen";
 import BookingScreen from "../screens/BookingScreen";
@@ -24,15 +24,17 @@ const MainTabs = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
+          let name;
+
           if (route.name === "Home") {
-            iconName = focused ? "home" : "home-outline";
+            name = focused ? "home" : "home-outline";
           } else if (route.name === "Booking") {
-            iconName = focused ? "calendar" : "calendar-outline";
+            name = focused ? "calendar" : "calendar-outline";
           } else if (route.name === "Profile") {
-            iconName = focused ? "person" : "person-outline";
+            name = focused ? "person" : "person-outline";
           }
-          return <Ionicons name={iconName} size={size} color={color} />;
+
+          return <Ionicons name={name} size={size} color={color} />;
         },
         tabBarActiveTintColor: "#6366f1",
         tabBarInactiveTintColor: "gray",
@@ -46,10 +48,10 @@ const MainTabs = () => {
   );
 };
 
-const AppNavigator = () => {
+const AppNavigator = ({ initialRoute }) => {
   return (
     <Stack.Navigator
-      initialRouteName="Login"
+      initialRouteName={initialRoute}
       screenOptions={{
         headerStyle: { backgroundColor: "#6366f1" },
         headerTintColor: "#fff",
@@ -62,50 +64,43 @@ const AppNavigator = () => {
         component={LoginScreen}
         options={{ headerShown: false }}
       />
+
       <Stack.Screen
         name="MainTabs"
         component={MainTabs}
         options={{ headerShown: false }}
       />
+
       <Stack.Screen
         name="AIAnalysis"
         component={AIAnalysisScreen}
-        options={{
-          title: "AI Text Analysis",
-          headerBackTitle: " ", // Empty string to hide the back title
-          headerBackTitleVisible: false,
-        }}
+        options={{ title: "AI Text Analysis" }}
       />
+
       <Stack.Screen
         name="DepressionMeter"
         component={DepressionMeterScreen}
-        options={{
-          title: "Depression Assessment",
-          headerBackTitle: " ", // Empty string to hide the back title
-          headerBackTitleVisible: false,
-        }}
+        options={{ title: "Depression Assessment" }}
       />
+
       <Stack.Screen
         name="Unarathma"
         component={UnarathmaScreen}
         options={{
           title: "Unarathma Service",
-          headerBackTitle: " ",
-          headerBackTitleVisible: false,
           headerStyle: {
-            backgroundColor: COLORS.primary || '#6366f1', // Fallback color
+            backgroundColor: COLORS.primary || "#6366f1",
           },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+          headerTintColor: "#fff",
         }}
       />
+
       <Stack.Screen
         name="ActivityHub"
         component={ActivityHubScreen}
         options={{ title: "Activity Hub" }}
       />
+
       <Stack.Screen
         name="Subscription"
         component={SubscriptionScreen}

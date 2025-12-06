@@ -1,7 +1,8 @@
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigation } from "@react-navigation/native";
+
 import {
   Alert,
   Animated,
@@ -21,6 +22,7 @@ const HomeScreen = ({ navigation }) => {
   const [user] = useState({ name: "Sarah", isPremium: false });
   const [isPremium] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+    const [userName, setUserName] = useState("Friend");
   const [selectedMood, setSelectedMood] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("music");
 
@@ -29,32 +31,48 @@ const HomeScreen = ({ navigation }) => {
   const bounceAnim2 = useRef(new Animated.Value(0)).current;
   const bounceAnim3 = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    setIsVisible(true);
+useEffect(() => {
 
-    const animate = (anim, delay = 0) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, {
-            toValue: -10,
-            duration: 700,
-            useNativeDriver: true,
-            easing: Easing.inOut(Easing.ease),
-            delay,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 700,
-            useNativeDriver: true,
-            easing: Easing.inOut(Easing.ease),
-          }),
-        ])
-      );
+  const loadUser = async () => {
+    const email = await AsyncStorage.getItem("email");
 
-    animate(bounceAnim1).start();
-    animate(bounceAnim2, 300).start();
-    animate(bounceAnim3, 500).start();
-  }, []);
+    if (email) {
+      const namePart = email.split("@")[0]; // extract before '@'
+      const formatted =
+        namePart.charAt(0).toUpperCase() + namePart.slice(1); // capitalize first letter
+      setUserName(formatted);
+    }
+  };
+
+  loadUser();  // <-- correct place
+
+  setIsVisible(true);
+
+  const animate = (anim, delay = 0) =>
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, {
+          toValue: -10,
+          duration: 700,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+          delay,
+        }),
+        Animated.timing(anim, {
+          toValue: 0,
+          duration: 700,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+        }),
+      ])
+    );
+
+  animate(bounceAnim1).start();
+  animate(bounceAnim2, 300).start();
+  animate(bounceAnim3, 500).start();
+
+}, []);
+
 
   const moodOptions = [
     {
@@ -418,7 +436,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.userInfo}>
           <Text style={styles.greeting}>Good Morning,</Text>
           <Text style={styles.userName}>
-            {user?.name?.split(" ")[0] || "Friend"}
+            {userName}
           </Text>
         </View>
         <TouchableOpacity style={styles.profileButton}>
