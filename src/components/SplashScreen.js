@@ -284,7 +284,7 @@ const SplashScreenComponent = ({ onAnimationFinish }) => {
               ]}
             />
             <Image
-              source={require("../../assets/images/splash-icon.png")}
+              source={require("../../assets/images/logo_new.jpeg")}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 140,
     height: 140,
-    borderRadius: 28,
+    borderRadius: 70,
   },
   textContainer: {
     alignItems: "center",

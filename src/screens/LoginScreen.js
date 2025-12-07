@@ -135,77 +135,83 @@ const sendTokenToBackend = async (idToken) => {
 
 const handleSendOTP = async () => {
   if (!validateEmail(email)) {
-    setErrors({ email: "Please enter a valid email address" });
+    setErrors({ email: "Please enter a valid email" });
     return;
   }
 
   setLoading(true);
   try {
-    const formData = new FormData();
-    formData.append("email", email);
-
     const res = await fetch("https://mindyatra.in/Api/sendmail_otp_host_login", {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `email=${encodeURIComponent(email)}`,
     });
 
-    const result = await res.text();
-    console.log("OTP Response:", result);
+    const resultText = await res.text();
 
-    if (result === "1") {
-      Alert.alert("OTP Sent", "Please check your email for the OTP.");
+    // Print the full backend output, including PHP errors or notices
+    console.log("Backend full response:", resultText);
+    Alert.alert("Backend Response", resultText); // <-- shows it in the app too
+
+    // You can still do your checks if needed
+    if (resultText === "1") {
+      Alert.alert("OTP Sent", "Check your email for the OTP");
       setStep(2);
-    } else if (result === "3") {
-      Alert.alert("Email Not Registered", "This email is not found.");
-    } else {
-      Alert.alert("Error", "Failed to send OTP, try again.");
+    } 
+    else if (resultText === "3") {
+      Alert.alert("Email Not Found", "This email is not registered");
+    } 
+    else {
+      Alert.alert("Error", "Failed to send OTP. See backend response");
     }
-  } catch (err) {
-    console.error(err);
-    Alert.alert("Error", "Network error");
+  } catch (error) {
+    console.log("Fetch error:", error);
+    Alert.alert("Error", "Unable to send OTP. Check console for details");
   } finally {
     setLoading(false);
   }
 };
+
+
 
 
 const handleVerifyOTP = async () => {
   if (!otp || otp.length !== 6) {
-    setErrors({ otp: "Please enter a valid 6-digit OTP" });
+    setErrors({ otp: "Enter a valid 6-digit OTP" });
     return;
   }
 
   setLoading(true);
 
   try {
-    const formData = new FormData();
-    formData.append("email", email);
-    formData.append("otp", otp);
-
-    const res = await fetch("https://mindyatra.in/Api/verify_otp", {
+    const res = await fetch("https://mindyatra.in/Api/verify_otp_email", {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`,
     });
 
-    const result = await res.json(); // expecting {success:true, user_id, email, token}
-    console.log("Verify Response:", result);
+    const result = await res.text();
 
-    if (result.success) {
-      await AsyncStorage.setItem("user_id", result.user_id.toString());
-      await AsyncStorage.setItem("email", result.email);
-      await AsyncStorage.setItem("token", result.token);
+    if (result === "1") {
+      await AsyncStorage.setItem("email", email);
+      await AsyncStorage.setItem("isLoggedIn", "1");
 
       navigation.replace("MainTabs");
-    } else {
-      Alert.alert("Invalid OTP", "Incorrect code, try again");
+    } 
+    else if (result === "3") {
+      Alert.alert("Invalid OTP", "The OTP you entered is incorrect");
+    } 
+    else {
+      Alert.alert("Error", "Failed to verify OTP");
     }
-  } catch (err) {
-    console.error(err);
-    Alert.alert("Error", "Network error");
+  } catch (error) {
+    console.log(error);
+    Alert.alert("Error", "Unable to verify OTP");
   } finally {
     setLoading(false);
   }
 };
+
 
 
   return (
@@ -360,26 +366,48 @@ const handleVerifyOTP = async () => {
             </View>
 
             <Button
-              title={isNewUser ? "Create Account" : "Login"}
+              title={isNewUser ? "Login" : "Login"}
               onPress={handleVerifyOTP}
               loading={loading}
               style={styles.loginButton}
             />
 
             <TouchableOpacity
-              style={styles.resendContainer}
-              onPress={() => {
-                const otpCode = Math.floor(
-                  100000 + Math.random() * 900000
-                ).toString();
-                setGeneratedOTP(otpCode);
-                Alert.alert("OTP Sent", `Your new OTP is: ${otpCode}`);
-                console.log("New OTP:", otpCode);
-              }}
-            >
-              <Text style={styles.resendText}>Didn't receive the code? </Text>
-              <Text style={styles.resendLink}>Resend OTP</Text>
-            </TouchableOpacity>
+  style={styles.resendContainer}
+  onPress={async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        "https://mindyatra.in/Api/sendmail_otp_host_login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `email=${encodeURIComponent(email)}`,
+        }
+      );
+
+      const result = await res.text();
+
+      if (result === "1") {
+        Alert.alert("OTP Sent", "A new OTP has been sent to your email.");
+      } else if (result === "3") {
+        Alert.alert("Email Not Found", "This email does not exist.");
+      } else {
+        Alert.alert("Error", "Failed to resend OTP.");
+      }
+    } catch (error) {
+      console.log("Resend OTP Error:", error);
+      Alert.alert("Error", "Unable to resend OTP");
+    } finally {
+      setLoading(false);
+    }
+  }}
+>
+  <Text style={styles.resendText}>Didn't receive the code? </Text>
+  <Text style={styles.resendLink}>Resend OTP</Text>
+</TouchableOpacity>
+
           </View>
         )}
       </ScrollView>

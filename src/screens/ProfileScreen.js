@@ -1,19 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Button from '../components/Button';
-import { COLORS, SIZES } from '../utils/constants';
 import { authService } from '../services/auth';
+import { COLORS, SIZES } from '../utils/constants';
 
 const ProfileScreen = ({ navigation }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({ 
+    email: 'Loading...',
+    name: 'User',
+    isPremium: false,
+    country: 'India' 
+  });
 
   useEffect(() => {
     loadUser();
@@ -26,8 +32,23 @@ const ProfileScreen = ({ navigation }) => {
   }, [navigation]);
 
   const loadUser = async () => {
-    const currentUser = await authService.getCurrentUser();
-    setUser(currentUser);
+    try {
+      // Get email from AsyncStorage
+      const email = await AsyncStorage.getItem('email');
+      const name = await AsyncStorage.getItem('name') || email?.split('@')[0] || 'User';
+      
+      if (email) {
+        setUser(prev => ({
+          ...prev,
+          email,
+          name,
+          country: 'India',
+          isPremium: false
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading user:', error);
+    }
   };
 
   const handleLogout = () => {
