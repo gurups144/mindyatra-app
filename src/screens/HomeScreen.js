@@ -23,6 +23,8 @@ const HomeScreen = ({ navigation }) => {
   const [isPremium] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
     const [userName, setUserName] = useState("Friend");
+    const [user_id, setuser_id] = useState(0);
+    const [paid_fn, setpaid_status] = useState(0);
   const [selectedMood, setSelectedMood] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("music");
 
@@ -35,6 +37,14 @@ useEffect(() => {
 
   const loadUser = async () => {
     const email = await AsyncStorage.getItem("email");
+    const user_id = await AsyncStorage.getItem("user_id");
+
+   setuser_id(user_id);
+    const paid_status = await AsyncStorage.getItem("paid_status");
+
+   
+      setpaid_status(paid_status);
+      
 
     if (email) {
       const namePart = email.split("@")[0]; // extract before '@'
@@ -137,15 +147,15 @@ useEffect(() => {
         "Personalized Plans",
       ],
     },
-    {
-      id: 4,
-      title: "Wellness Library",
-      subtitle: "Music, videos, games & more",
-      icon: "library-books",
-      gradient: ["#f59e0b", "#ef4444"],
-      premium: true,
-      features: ["Premium Content", "Daily Updates", "Exclusive Access"],
-    },
+    // {
+    //   id: 4,
+    //   title: "Wellness Library",
+    //   subtitle: "Music, videos, games & more",
+    //   icon: "library-books",
+    //   gradient: ["#f59e0b", "#ef4444"],
+    //   premium: true,
+    //   features: ["Premium Content", "Daily Updates", "Exclusive Access"],
+    // },
   ];
 
   const quickTools = [
@@ -349,16 +359,30 @@ useEffect(() => {
             ))}
           </View>
 
-          <View style={styles.premiumButton}>
-            <Text style={styles.premiumButtonText}>
-              {user.isPremium ? "Access Now" : "Upgrade to Pro"}
-            </Text>
-            <Ionicons
-              name={user.isPremium ? "arrow-forward" : "diamond"}
-              size={20}
-              color="white"
-            />
-          </View>
+<TouchableOpacity
+  style={styles.premiumButton}
+  onPress={() => {
+    
+    if (!paid_fn) {
+      navigation.navigate("Subscription");
+    } else {
+      const url = `https://mindyatra.in/Api/know_mental_health/${user_id}`;
+      navigation.navigate("KnowYourMentalHealth", { url });
+    }
+  }}
+  
+>
+  <Text style={styles.premiumButtonText}>
+    {paid_fn ? "Access Now" : "Upgrade to Pro"}
+  </Text>
+  <Ionicons
+    name={paid_fn ? "arrow-forward" : "diamond"}
+    size={20}
+    color="white"
+  />
+</TouchableOpacity>
+
+
         </View>
       </LinearGradient>
     </TouchableOpacity>
@@ -504,17 +528,17 @@ useEffect(() => {
       </View>
 
       {/* Quick Tools */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Tools</Text>
         <View style={styles.quickToolContainer}>
           {quickTools.map((tool, idx) => (
             <QuickTool key={idx} tool={tool} />
           ))}
         </View>
-      </View>
+      </View> */}
 
       {/* Relaxation Content Section with Images */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <View style={styles.categoryTabs}>
           <TouchableOpacity
             style={[
@@ -573,17 +597,17 @@ useEffect(() => {
             ))}
           </View>
         )}
-      </View>
+      </View> */}
 
       {/* Additional Features Ideas */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>More Wellness Features</Text>
         <View style={styles.ideasGrid}>
           {additionalIdeas.map((idea, index) => (
             <IdeaCard key={index} idea={idea} />
           ))}
         </View>
-      </View>
+      </View> */}
 
       {/* Bottom Spacing */}
       <View style={styles.bottomSpacing} />

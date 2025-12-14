@@ -11,7 +11,9 @@ import AIAnalysisScreen from "../screens/AIAnalysisScreen";
 import BookingScreen from "../screens/BookingScreen";
 import DepressionMeterScreen from "../screens/DepressionMeterScreen";
 import HomeScreen from "../screens/HomeScreen";
+import KnowYourMentalHealthScreen from "../screens/KnowYourMentalHealthScreen";
 import LoginScreen from "../screens/LoginScreen";
+import PayUWebViewScreen from "../screens/PayUWebViewScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import SubscriptionScreen from "../screens/SubscriptionScreen";
 import UnarathmaScreen from "../screens/UnarathmaScreen";
@@ -82,6 +84,18 @@ const AppNavigator = ({ initialRoute }) => {
         component={DepressionMeterScreen}
         options={{ title: "Depression Assessment" }}
       />
+
+      <Stack.Screen
+  name="PayUWebView"
+  component={PayUWebViewScreen}
+  options={{ headerShown: false }}
+/>
+
+     <Stack.Screen
+  name="KnowYourMentalHealth"
+  component={KnowYourMentalHealthScreen}
+  options={{ title: "Know Your Mental Health" }}
+/>
 
       <Stack.Screen
         name="Unarathma"

@@ -1,208 +1,190 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Button from '../components/Button';
-import { COLORS, SIZES, SUBSCRIPTION_PRICES } from '../utils/constants';
-import { authService } from '../services/auth';
-import { paymentService } from '../services/payment';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width * 0.9;
+
+
+
 
 const SubscriptionScreen = ({ navigation }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [priceInfo, setPriceInfo] = useState({ amount: 0, currency: '₹' });
 
+
+  const [promoCodeGlobal, setPromoCodeGlobal] = useState('');
+  const [promoCodeIndia, setPromoCodeIndia] = useState('');
+
+  const [userId, setUserId] = useState(null);
+const [email, setEmail] = useState(null);
+const [token, setToken] = useState(null);
+const [paidStatus, setPaidStatus] = useState(null);
+
+
+  
   useEffect(() => {
-    loadUserData();
+    const loadUser = async () => {
+      const uid = await AsyncStorage.getItem("user_id");
+      const em = await AsyncStorage.getItem("email");
+      const tk = await AsyncStorage.getItem("token");
+      const ps = await AsyncStorage.getItem("paid_status");
+
+      console.log("SUB SCREEN USER:", uid);
+
+      setUserId(uid);
+      setEmail(em);
+      setToken(tk);
+      setPaidStatus(ps);
+    };
+
+    loadUser();
   }, []);
 
-  const loadUserData = async () => {
-    const currentUser = await authService.getCurrentUser();
-    setUser(currentUser);
-    if (currentUser) {
-      const pricing = paymentService.getSubscriptionPrice(currentUser.country);
-      setPriceInfo(pricing);
-    }
-  };
 
-  const handleSubscribe = async () => {
-    Alert.alert(
-      'Confirm Subscription',
-      `You will be charged ${priceInfo.currency}${priceInfo.amount}. Continue?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Continue',
-          onPress: async () => {
-            setLoading(true);
-            const response = await paymentService.processSubscription(user.country);
-            setLoading(false);
 
-            if (response.success) {
-              Alert.alert(
-                'Success!',
-                response.message,
-                [
-                  {
-                    text: 'OK',
-                    onPress: () => navigation.navigate('Home'),
-                  },
-                ]
-              );
-            } else {
-              Alert.alert('Payment Failed', response.error);
-            }
-          },
-        },
-      ]
-    );
-  };
 
-  const features = [
+  const plans = [
     {
-      icon: 'medical',
-      title: 'Unarathma Service',
-      description: 'AI + Doctor reports with direct consultation',
+      id: 'global',
+      title: 'Beta version ( Trail plan ) Other Countries',
+      price: '$50',
+      originalPrice: '@$100',
+      discount: '50% Off – Now Only @$50',
+      description: 'Unlock Mental Clarity – Just $50',
+      subDescription: 'Get personalized mental health insights from your written thoughts or voice notes, with expert feedback in 48 hours.',
+      buttonText: 'Coming Soon',
+      disabled: true,
     },
     {
-      icon: 'grid',
-      title: 'Activity Hub Access',
-      description: 'Music, videos, games, books, and blogs',
-    },
-    {
-      icon: 'flash',
-      title: 'Priority Support',
-      description: 'Get faster responses from our support team',
-    },
-    {
-      icon: 'trending-up',
-      title: 'Advanced Analytics',
-      description: 'Detailed insights and progress tracking',
-    },
-    {
-      icon: 'notifications',
-      title: 'Premium Content',
-      description: 'Exclusive articles and resources',
-    },
-    {
-      icon: 'lock-closed',
-      title: 'Ad-Free Experience',
-      description: 'Enjoy distraction-free mental wellness',
+      id: 'india',
+      title: 'Beta version ( Trail plan ) India',
+      price: '₹250',
+      originalPrice: '@₹500',
+      discount: '50% Off – Now Only @₹250',
+      description: 'Unlock Mental Clarity – Just ₹250',
+      subDescription: 'Get personalized mental health insights from your written thoughts or voice notes, with expert feedback in 48 hours.',
+      buttonText: 'Pay Now',
+      disabled: false,
     },
   ];
 
+  const features = [
+    'AI + Astro-based mental health insights',
+    'Expert feedback from your voice or writing in 48 hours',
+    '1-day access to our Activity Hub — music, stories & mind games',
+  ];
+
+const handleSubscribe = async (planId, promoCode) => {
+  if (planId !== "india") return;
+
+  if (!userId) {
+    alert("Please login to continue");
+    return;
+  }
+
+  if (paidStatus === "1") {
+    alert("You already have an active subscription");
+    return;
+  }
+
+  const response = await fetch(
+  "https://mindyatra.in/Api/create_payment",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Bearer ${token}`,
+    },
+    body: `amount=1&email=${encodeURIComponent(email)}&name=MindYatra User`,
+  }
+);
+
+  const data = await response.json();
+
+  navigation.navigate("PayUWebView", { payuData: data });
+};
+
+
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} color={COLORS.white} onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Get Premium</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Subscription</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Hero Section */}
-        <View style={styles.heroSection}>
-          <Ionicons name="star" size={80} color={COLORS.warning} />
-          <Text style={styles.heroTitle}>Unlock Premium Features</Text>
-          <Text style={styles.heroSubtitle}>
-            Get full access to all mental wellness tools and services
-          </Text>
-        </View>
-
-        {/* Pricing Card */}
-        <View style={styles.pricingCard}>
-          <View style={styles.pricingHeader}>
-            <View>
-              <Text style={styles.pricingLabel}>One-Time Payment</Text>
-              <Text style={styles.priceAmount}>
-                {priceInfo.currency}{priceInfo.amount}
-              </Text>
-              <Text style={styles.pricingSubtext}>Lifetime Access</Text>
-            </View>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>BEST VALUE</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Features List */}
-        <View style={styles.featuresSection}>
-          <Text style={styles.sectionTitle}>What's Included:</Text>
-          {features.map((feature, index) => (
-            <View key={index} style={styles.featureItem}>
-              <View style={[styles.featureIcon, { backgroundColor: COLORS.primary + '20' }]}>
-                <Ionicons name={feature.icon} size={24} color={COLORS.primary} />
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.cardsContainer}>
+          {plans.map((plan) => (
+            <View key={plan.id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>{plan.title}</Text>
               </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureDescription}>{feature.description}</Text>
+              
+              <View style={styles.cardBody}>
+                <Text style={styles.price}>{plan.price}</Text>
+                
+                <View style={styles.discountContainer}>
+                  <Text style={styles.discountEmoji}>🎉</Text>
+                  <Text style={styles.discountText}>
+                    {plan.discount} <Text style={styles.originalPrice}>{plan.originalPrice}</Text>
+                  </Text>
+                </View>
+
+                <Text style={styles.descriptionBold}>{plan.description}</Text>
+                <Text style={styles.description}>{plan.subDescription}</Text>
+
+                <Text style={styles.featuresTitle}>What's included:</Text>
+
+                <View style={styles.featuresList}>
+                  {features.map((feature, index) => (
+                    <View key={index} style={styles.featureItem}>
+                      <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
+                      <Text style={styles.featureText}>{feature}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                <Text style={styles.journeyText}>
+                  Start your journey to clarity — simple, personalized, and judgment-free.
+                </Text>
+
+                <TextInput
+                  style={styles.promoInput}
+                  placeholder="Enter Promo Code (if any)"
+                  value={plan.id === 'global' ? promoCodeGlobal : promoCodeIndia}
+                  onChangeText={plan.id === 'global' ? setPromoCodeGlobal : setPromoCodeIndia}
+                />
+
+                <TouchableOpacity
+                  style={[
+                    styles.subscribeButton,
+                    plan.disabled && styles.disabledButton
+                  ]}
+                  onPress={() => handleSubscribe(plan.id, plan.id === 'global' ? promoCodeGlobal : promoCodeIndia)}
+                  disabled={plan.disabled}
+                >
+                  <Text style={styles.subscribeButtonText}>
+                    {plan.buttonText}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
             </View>
           ))}
-        </View>
-
-        {/* Testimonials */}
-        <View style={styles.testimonialsSection}>
-          <Text style={styles.sectionTitle}>What Our Users Say:</Text>
-          
-          <View style={styles.testimonialCard}>
-            <View style={styles.stars}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Ionicons key={star} name="star" size={16} color={COLORS.warning} />
-              ))}
-            </View>
-            <Text style={styles.testimonialText}>
-              "The Unarathma service changed my life. Getting both AI and doctor insights was incredibly helpful!"
-            </Text>
-            <Text style={styles.testimonialAuthor}>- Priya, Mumbai</Text>
-          </View>
-
-          <View style={styles.testimonialCard}>
-            <View style={styles.stars}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Ionicons key={star} name="star" size={16} color={COLORS.warning} />
-              ))}
-            </View>
-            <Text style={styles.testimonialText}>
-              "Activity Hub is amazing! The relaxation music and guided videos help me manage stress daily."
-            </Text>
-            <Text style={styles.testimonialAuthor}>- Raj, Delhi</Text>
-          </View>
-        </View>
-
-        {/* Money Back Guarantee */}
-        <View style={styles.guaranteeCard}>
-          <Ionicons name="shield-checkmark" size={48} color={COLORS.success} />
-          <View style={styles.guaranteeContent}>
-            <Text style={styles.guaranteeTitle}>7-Day Money Back Guarantee</Text>
-            <Text style={styles.guaranteeText}>
-              Not satisfied? Get a full refund within 7 days, no questions asked.
-            </Text>
-          </View>
-        </View>
-
-        {/* CTA Button */}
-        <Button
-          title={`Subscribe for ${priceInfo.currency}${priceInfo.amount}`}
-          onPress={handleSubscribe}
-          loading={loading}
-          style={styles.subscribeButton}
-        />
-
-        {/* Info Note */}
-        <View style={styles.infoNote}>
-          <Ionicons name="information-circle" size={20} color={COLORS.info} />
-          <Text style={styles.infoText}>
-            Secure payment. Your data is encrypted and protected.
-          </Text>
         </View>
       </ScrollView>
     </View>
@@ -212,186 +194,151 @@ const SubscriptionScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: COLORS.primary,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 50,
     paddingBottom: 20,
-    paddingHorizontal: SIZES.padding,
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
   headerTitle: {
-    color: COLORS.white,
-    fontSize: SIZES.h3,
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#000',
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    paddingVertical: 20,
   },
-  heroSection: {
+  cardsContainer: {
+    width: '100%',
     alignItems: 'center',
-    padding: SIZES.padding * 2,
-    backgroundColor: COLORS.white,
+    paddingBottom: 30,
   },
-  heroTitle: {
-    fontSize: SIZES.h1,
-    fontWeight: 'bold',
-    color: COLORS.dark,
-    marginTop: SIZES.padding,
+  card: {
+    width: CARD_WIDTH,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    backgroundColor: '#E91E63',
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
     textAlign: 'center',
   },
-  heroSubtitle: {
-    fontSize: SIZES.medium,
-    color: COLORS.gray,
-    textAlign: 'center',
-    marginTop: SIZES.base,
+  cardBody: {
+    padding: 20,
   },
-  pricingCard: {
-    backgroundColor: COLORS.primary,
-    margin: SIZES.padding,
-    padding: SIZES.padding * 1.5,
-    borderRadius: SIZES.radius,
-    elevation: 4,
-  },
-  pricingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  pricingLabel: {
-    color: COLORS.white,
-    fontSize: SIZES.medium,
-    opacity: 0.9,
-  },
-  priceAmount: {
-    color: COLORS.white,
+  price: {
     fontSize: 48,
     fontWeight: 'bold',
-    marginTop: 4,
+    color: '#333',
+    textAlign: 'center',
+    marginVertical: 10,
   },
-  pricingSubtext: {
-    color: COLORS.white,
-    fontSize: SIZES.medium,
-    marginTop: 4,
-    opacity: 0.9,
+  discountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
   },
-  badge: {
-    backgroundColor: COLORS.warning,
-    paddingHorizontal: SIZES.padding,
-    paddingVertical: SIZES.base / 2,
-    borderRadius: SIZES.radius / 2,
+  discountEmoji: {
+    fontSize: 16,
+    marginRight: 5,
   },
-  badgeText: {
-    color: COLORS.white,
-    fontSize: SIZES.small,
+  discountText: {
+    fontSize: 13,
+    color: '#333',
+    fontWeight: '600',
+  },
+  originalPrice: {
+    textDecorationLine: 'line-through',
+    color: '#999',
+  },
+  descriptionBold: {
+    fontSize: 14,
     fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 10,
   },
-  featuresSection: {
-    padding: SIZES.padding,
+  description: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 15,
   },
-  sectionTitle: {
-    fontSize: SIZES.h3,
+  featuresTitle: {
+    fontSize: 14,
     fontWeight: 'bold',
-    color: COLORS.dark,
-    marginBottom: SIZES.padding,
+    color: '#333',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  featuresList: {
+    marginBottom: 15,
   },
   featureItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    padding: SIZES.padding,
-    borderRadius: SIZES.radius,
-    marginBottom: SIZES.padding,
-    elevation: 1,
+    alignItems: 'flex-start',
+    marginBottom: 10,
   },
-  featureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  featureContent: {
+  featureText: {
+    marginLeft: 8,
+    fontSize: 12,
+    color: '#555',
     flex: 1,
-    marginLeft: SIZES.padding,
+    lineHeight: 18,
   },
-  featureTitle: {
-    fontSize: SIZES.medium,
-    fontWeight: '600',
-    color: COLORS.dark,
+  journeyText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 15,
   },
-  featureDescription: {
-    fontSize: SIZES.font,
-    color: COLORS.gray,
-    marginTop: 2,
-  },
-  testimonialsSection: {
-    padding: SIZES.padding,
-    backgroundColor: COLORS.light,
-  },
-  testimonialCard: {
-    backgroundColor: COLORS.white,
-    padding: SIZES.padding,
-    borderRadius: SIZES.radius,
-    marginBottom: SIZES.padding,
-  },
-  stars: {
-    flexDirection: 'row',
-    marginBottom: SIZES.base,
-  },
-  testimonialText: {
-    fontSize: SIZES.medium,
-    color: COLORS.dark,
-    lineHeight: 22,
-    fontStyle: 'italic',
-    marginBottom: SIZES.base,
-  },
-  testimonialAuthor: {
-    fontSize: SIZES.font,
-    color: COLORS.gray,
-    fontWeight: '600',
-  },
-  guaranteeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.success + '20',
-    margin: SIZES.padding,
-    padding: SIZES.padding,
-    borderRadius: SIZES.radius,
-  },
-  guaranteeContent: {
-    flex: 1,
-    marginLeft: SIZES.padding,
-  },
-  guaranteeTitle: {
-    fontSize: SIZES.medium,
-    fontWeight: 'bold',
-    color: COLORS.dark,
-  },
-  guaranteeText: {
-    fontSize: SIZES.font,
-    color: COLORS.gray,
-    marginTop: 4,
-    lineHeight: 20,
+  promoInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 13,
+    backgroundColor: '#fff',
+    marginBottom: 15,
   },
   subscribeButton: {
-    marginHorizontal: SIZES.padding,
-    marginBottom: SIZES.padding,
-  },
-  infoNote: {
-    flexDirection: 'row',
+    backgroundColor: '#E91E63',
+    paddingVertical: 14,
+    borderRadius: 6,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: SIZES.padding,
-    paddingBottom: SIZES.padding * 2,
   },
-  infoText: {
-    fontSize: SIZES.font,
-    color: COLORS.gray,
-    marginLeft: SIZES.base,
+  subscribeButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  disabledButton: {
+    backgroundColor: '#E91E63',
+    opacity: 1,
   },
 });
 

@@ -83,6 +83,7 @@ useEffect(() => {
       setLoading(false);
     }
   };
+  
 
 const sendTokenToBackend = async (idToken) => {
   try {
@@ -95,13 +96,14 @@ const sendTokenToBackend = async (idToken) => {
     });
 
     const data = await res.json();
-    console.log("Backend response:", data);
+    alert("Backend response:", data);
 
     if (data.success) {
       // Save session info locally
-      await AsyncStorage.setItem("user_id", data.user_id.toString());
+      await AsyncStorage.setItem("user_id", data.user_id);
       await AsyncStorage.setItem("email", data.email);
       await AsyncStorage.setItem("token", data.token);
+      await AsyncStorage.setItem("paid_status",data.paid_status);
 
       navigation.replace("MainTabs");
     } else {
@@ -184,26 +186,23 @@ const handleVerifyOTP = async () => {
   setLoading(true);
 
   try {
-    const res = await fetch("https://mindyatra.in/Api/verify_otp_email", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`,
-    });
+const res = await fetch("https://mindyatra.in/Api/verify_otp_email", {
+  method: "POST",
+  headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  body: `email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`,
+});
 
-    const result = await res.text();
+const data = await res.json();
 
-    if (result === "1") {
-      await AsyncStorage.setItem("email", email);
-      await AsyncStorage.setItem("isLoggedIn", "1");
+if (data.success) {
+  await AsyncStorage.setItem("user_id", String(data.user_id));
+  await AsyncStorage.setItem("email", data.email);
+  await AsyncStorage.setItem("paid_status", String(data.paid_status));
 
-      navigation.replace("MainTabs");
-    } 
-    else if (result === "3") {
-      Alert.alert("Invalid OTP", "The OTP you entered is incorrect");
-    } 
-    else {
-      Alert.alert("Error", "Failed to verify OTP");
-    }
+  navigation.replace("MainTabs");
+} else {
+  Alert.alert("Invalid OTP", data.message || "OTP verification failed");
+}
   } catch (error) {
     console.log(error);
     Alert.alert("Error", "Unable to verify OTP");
