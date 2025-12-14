@@ -52,9 +52,9 @@
         }
       ],
       [
-        "expo-av",
+       "expo-audio",
         {
-          "microphonePermission": "Allow app to access your microphone."
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
       ],
       "expo-web-browser"
