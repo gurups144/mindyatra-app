@@ -81,36 +81,38 @@ const [paidStatus, setPaidStatus] = useState(null);
     'Expert feedback from your voice or writing in 48 hours',
     '1-day access to our Activity Hub — music, stories & mind games',
   ];
-
 const handleSubscribe = async (planId, promoCode) => {
-  if (planId !== "india") return;
+  // ... existing code ...
 
-  if (!userId) {
-    alert("Please login to continue");
-    return;
+  try {
+    console.log("Making payment request...");
+    
+    const response = await fetch("https://mindyatra.in/Api/create_payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `amount=1&email=${encodeURIComponent(email)}&name=MindYatra User`,
+    });
+
+    const data = await response.json();
+    console.log("API Response:", JSON.stringify(data, null, 2));
+
+    if (data.payu_url && data.params) {
+      console.log("Navigating to PayUWebView...");
+      // Use setTimeout to ensure navigation stack is ready
+      setTimeout(() => {
+        navigation.navigate("PayUWebView", { payuData: data });
+      }, 100);
+    } else {
+      alert("Payment initialization failed: " + JSON.stringify(data));
+    }
+  } catch (error) {
+    console.error("Payment error:", error);
+    alert("Something went wrong!");
   }
-
-  if (paidStatus === "1") {
-    alert("You already have an active subscription");
-    return;
-  }
-
-  const response = await fetch(
-  "https://mindyatra.in/Api/create_payment",
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Bearer ${token}`,
-    },
-    body: `amount=1&email=${encodeURIComponent(email)}&name=MindYatra User`,
-  }
-);
-
-  const data = await response.json();
-
-  navigation.navigate("PayUWebView", { payuData: data });
 };
+
 
 
 

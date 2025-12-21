@@ -361,15 +361,20 @@ useEffect(() => {
 
 <TouchableOpacity
   style={styles.premiumButton}
-  onPress={() => {
-    
-    if (!paid_fn) {
-      navigation.navigate("Subscription");
-    } else {
-      const url = `https://mindyatra.in/Api/know_mental_health/${user_id}`;
-      navigation.navigate("KnowYourMentalHealth", { url });
-    }
-  }}
+onPress={() => {
+  console.log("Button Pressed");
+  console.log("paid_fn value:", paid_fn);
+  console.log("paid_fn type:", typeof paid_fn);
+
+  if (paid_fn!=1) {
+    console.log("Attempting to navigate to Subscription");
+    navigation.navigate("Subscription");
+  } else {
+    console.log("Attempting to navigate to KnowYourMentalHealth");
+    const url = `https://mindyatra.in/Api/know_mental_health/${user_id}`;
+    navigation.navigate("KnowYourMentalHealth", { url });
+  }
+}}
   
 >
   <Text style={styles.premiumButtonText}>

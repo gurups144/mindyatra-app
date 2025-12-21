@@ -13,6 +13,7 @@ import DepressionMeterScreen from "../screens/DepressionMeterScreen";
 import HomeScreen from "../screens/HomeScreen";
 import KnowYourMentalHealthScreen from "../screens/KnowYourMentalHealthScreen";
 import LoginScreen from "../screens/LoginScreen";
+import PaymentSuccessScreen from "../screens/PaymentSuccessScreen";
 import PayUWebViewScreen from "../screens/PayUWebViewScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import SubscriptionScreen from "../screens/SubscriptionScreen";
@@ -78,6 +79,15 @@ const AppNavigator = ({ initialRoute }) => {
         component={AIAnalysisScreen}
         options={{ title: "AI Text Analysis" }}
       />
+
+      <Stack.Screen
+  name="PaymentSuccess"
+  component={PaymentSuccessScreen}
+  options={{ 
+    headerShown: false,
+    gestureEnabled: false // Prevent going back
+  }}
+/>
 
       <Stack.Screen
         name="DepressionMeter"

@@ -4,7 +4,7 @@
     "slug": "mindyatra",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo_new.jpeg",
     "scheme": "mindyatraapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -34,18 +34,18 @@
       "favicon": "./assets/images/favicon.png"
     },
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/logo_new.jpeg",
       "resizeMode": "contain",
-      "backgroundColor": "#6366f1"
+      "backgroundColor": "#ffffff"
     },
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/logo_new.jpeg",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#6366f1",
+          "backgroundColor": "#ffffff",
           "dark": {
             "backgroundColor": "#6366f1"
           }

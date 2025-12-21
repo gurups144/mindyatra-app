@@ -4,6 +4,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
+import { Image } from 'react-native';
 
 import {
   Alert,
@@ -220,7 +221,11 @@ if (data.success) {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Ionicons name="brain" size={80} color={COLORS.primary} />
+          <Image 
+            source={require('../../assets/images/logo_new.jpeg')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>MindYatra</Text>
           <Text style={styles.subtitle}>Your Mental Wellness Journey</Text>
         </View>
@@ -424,9 +429,13 @@ const styles = StyleSheet.create({
     padding: SIZES.padding * 2,
   },
   header: {
-    alignItems: "center",
-    marginTop: 60,
-    marginBottom: 40,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 150,
+    height: 150,
+    marginBottom: 10,
   },
   title: {
     fontSize: SIZES.h1,
