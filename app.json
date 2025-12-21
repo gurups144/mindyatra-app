@@ -36,7 +36,9 @@
     "splash": {
       "image": "./assets/images/logo_new.jpeg",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ffffff",
+      "imageWidth": 200,
+      "imageHeight": 200
     },
     "plugins": [
       [
@@ -44,6 +46,7 @@
         {
           "image": "./assets/images/logo_new.jpeg",
           "imageWidth": 200,
+          "imageHeight": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {

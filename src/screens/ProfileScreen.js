@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -71,40 +72,28 @@ const ProfileScreen = ({ navigation }) => {
 
   const menuItems = [
     {
-      icon: 'person-outline',
-      title: 'Edit Profile',
-      subtitle: 'Update your personal information',
-      onPress: () => Alert.alert('Coming Soon', 'Edit profile feature will be available soon'),
-    },
-    {
       icon: 'notifications-outline',
       title: 'Notifications',
-      subtitle: 'Manage notification preferences',
-      onPress: () => Alert.alert('Coming Soon', 'Notification settings will be available soon'),
-    },
-    {
-      icon: 'calendar-outline',
-      title: 'My Bookings',
-      subtitle: 'View your session history',
-      onPress: () => Alert.alert('Coming Soon', 'Booking history will be available soon'),
+      subtitle: 'View your notifications',
+      onPress: () => navigation.navigate('Notifications'),
     },
     {
       icon: 'document-text-outline',
-      title: 'My Reports',
-      subtitle: 'Access your assessment reports',
-      onPress: () => Alert.alert('Coming Soon', 'Reports section will be available soon'),
+      title: 'Terms & Conditions',
+      subtitle: 'Read our terms and conditions',
+      onPress: () => Linking.openURL('https://mindyatra.in/Homepage/terms_condition'),
+    },
+    {
+      icon: 'shield-checkmark-outline',
+      title: 'Privacy Policy',
+      subtitle: 'Read our privacy policy',
+      onPress: () => Linking.openURL('https://mindyatra.in/Homepage/privacy_policy'),
     },
     {
       icon: 'help-circle-outline',
       title: 'Help & Support',
       subtitle: 'Get help and contact support',
       onPress: () => Alert.alert('Help & Support', 'Email: support@mindyatra.com\nPhone: +91 1234567890'),
-    },
-    {
-      icon: 'shield-checkmark-outline',
-      title: 'Privacy Policy',
-      subtitle: 'Read our privacy policy',
-      onPress: () => Alert.alert('Privacy Policy', 'Your privacy is important to us. Visit our website for full details.'),
     },
     {
       icon: 'information-circle-outline',
@@ -140,7 +129,7 @@ const ProfileScreen = ({ navigation }) => {
         </View>
 
         {/* Subscription Status */}
-        <View style={[
+        {/* <View style={[
           styles.subscriptionCard,
           { backgroundColor: user?.isPremium ? COLORS.success + '20' : COLORS.warning + '20' }
         ]}>
@@ -169,7 +158,7 @@ const ProfileScreen = ({ navigation }) => {
               style={styles.upgradeButton}
             />
           )}
-        </View>
+        </View> */}
 
         {/* Quick Stats */}
         <View style={styles.statsContainer}>

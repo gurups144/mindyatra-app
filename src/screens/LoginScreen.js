@@ -9,13 +9,14 @@ import { Image } from 'react-native';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import Button from "../components/Button";
 import { authService } from "../services/auth";
@@ -97,7 +98,7 @@ const sendTokenToBackend = async (idToken) => {
     });
 
     const data = await res.json();
-    alert("Backend response:", data);
+    // alert("Backend response:", data);
 
     if (data.success) {
       // Save session info locally
@@ -154,7 +155,7 @@ const handleSendOTP = async () => {
 
     // Print the full backend output, including PHP errors or notices
     console.log("Backend full response:", resultText);
-    Alert.alert("Backend Response", resultText); // <-- shows it in the app too
+    // Alert.alert("Backend Response", resultText); // <-- shows it in the app too
 
     // You can still do your checks if needed
     if (resultText === "1") {
@@ -267,7 +268,7 @@ if (data.success) {
               style={styles.loginButton}
             />
 
-            <View style={styles.dividerContainer}>
+            {/* <View style={styles.dividerContainer}>
               <View style={styles.divider} />
               <Text style={styles.dividerText}>OR</Text>
               <View style={styles.divider} />
@@ -280,7 +281,7 @@ if (data.success) {
             >
               <Ionicons name="logo-google" size={20} color="#DB4437" />
               <Text style={styles.googleButtonText}>Sign in with Google</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         )}
 
@@ -316,8 +317,19 @@ if (data.success) {
               </TouchableOpacity>
               <Text style={styles.termsText}>
                 I agree to the{" "}
-                <Text style={styles.termsLink}>Terms and Conditions</Text> and{" "}
-                <Text style={styles.termsLink}>Privacy Policy</Text>
+                <Text 
+                  style={styles.termsLink}
+                  onPress={() => Linking.openURL('https://mindyatra.in/Homepage/terms_condition')}
+                >
+                  Terms and Conditions
+                </Text>{" "}
+                and{" "}
+                <Text 
+                  style={styles.termsLink}
+                  onPress={() => Linking.openURL('https://mindyatra.in/Homepage/privacy_policy')}
+                >
+                  Privacy Policy
+                </Text>
               </Text>
             </View>
 
@@ -433,9 +445,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: {
-    width: 150,
-    height: 150,
-    marginBottom: 10,
+    width: 120,
+    height: 120,
+    borderRadius: 60,  // Makes it circular
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    overflow: 'hidden', // Ensures the image stays within the circular boundary
   },
   title: {
     fontSize: SIZES.h1,

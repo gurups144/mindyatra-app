@@ -8,11 +8,11 @@ import { COLORS } from "../utils/constants";
 // Screens
 import ActivityHubScreen from "../screens/ActivityHubScreen";
 import AIAnalysisScreen from "../screens/AIAnalysisScreen";
-import BookingScreen from "../screens/BookingScreen";
 import DepressionMeterScreen from "../screens/DepressionMeterScreen";
 import HomeScreen from "../screens/HomeScreen";
 import KnowYourMentalHealthScreen from "../screens/KnowYourMentalHealthScreen";
 import LoginScreen from "../screens/LoginScreen";
+import NotificationsScreen from "../screens/NotificationsScreen";
 import PaymentSuccessScreen from "../screens/PaymentSuccessScreen";
 import PayUWebViewScreen from "../screens/PayUWebViewScreen";
 import ProfileScreen from "../screens/ProfileScreen";
@@ -45,7 +45,7 @@ const MainTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Booking" component={BookingScreen} />
+      {/* <Tab.Screen name="Booking" component={BookingScreen} /> */}
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -129,6 +129,18 @@ const AppNavigator = ({ initialRoute }) => {
         name="Subscription"
         component={SubscriptionScreen}
         options={{ title: "Get Premium" }}
+      />
+
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ 
+          title: "Notifications",
+          headerStyle: {
+            backgroundColor: COLORS.primary || "#6366f1",
+          },
+          headerTintColor: "#fff",
+        }}
       />
     </Stack.Navigator>
   );

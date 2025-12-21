@@ -1,8 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Authentication service functions
-const USER_KEY = '@user';
-const TOKEN_KEY = '@token';
+
+
+// In src/services/auth.js, update these constants:
+const USER_KEY = 'user';           // Changed from '@user'
+const TOKEN_KEY = 'token';         // Changed from '@token'
+const EMAIL_KEY = 'email';         // Changed from '@email'
+const PAID_STATUS_KEY = 'paid_status'; // Changed from '@paid_status'
+const USER_ID_KEY = 'user_id';     // Changed from '@user_id'
 
 export const authService = {
   // Login user
@@ -16,8 +21,13 @@ export const authService = {
         isPremium: false,
         country: 'India',
       };
-      await AsyncStorage.setItem(USER_KEY, JSON.stringify(mockUser));
-      await AsyncStorage.setItem(TOKEN_KEY, 'mock_token_123');
+      await AsyncStorage.multiSet([
+        [USER_KEY, JSON.stringify(mockUser)],
+        [TOKEN_KEY, 'mock_token_123'],
+        [EMAIL_KEY, email],
+        [PAID_STATUS_KEY, 'false'],
+        [USER_ID_KEY, '1']
+      ]);
       return { success: true, user: mockUser };
     } catch (error) {
       return { success: false, error: error.message };
@@ -46,8 +56,13 @@ export const authService = {
   // Logout user
   logout: async () => {
     try {
-      await AsyncStorage.removeItem(USER_KEY);
-      await AsyncStorage.removeItem(TOKEN_KEY);
+      await AsyncStorage.multiRemove([
+        USER_KEY,
+        TOKEN_KEY,
+        EMAIL_KEY,
+        PAID_STATUS_KEY,
+        USER_ID_KEY
+      ]);
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -80,12 +95,44 @@ export const authService = {
     }
   },
 
+  // Get authentication token
+  getToken: async () => {
+    try {
+      return await AsyncStorage.getItem(TOKEN_KEY);
+    } catch (error) {
+      console.error('Error getting token:', error);
+      return null;
+    }
+  },
+
+  // Get user email
+  getEmail: async () => {
+    try {
+      return await AsyncStorage.getItem(EMAIL_KEY);
+    } catch (error) {
+      console.error('Error getting email:', error);
+      return null;
+    }
+  },
+
+  // Check if user is authenticated
+  isAuthenticated: async () => {
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      return !!token;
+    } catch (error) {
+      console.error('Error checking authentication status:', error);
+      return false;
+    }
+  },
+
   // Check if user has premium access
   hasPremiumAccess: async () => {
     try {
-      const user = await authService.getCurrentUser();
-      return user?.isPremium || false;
+      const paidStatus = await AsyncStorage.getItem(PAID_STATUS_KEY);
+      return paidStatus === 'true';
     } catch (error) {
+      console.error('Error checking premium status:', error);
       return false;
     }
   },

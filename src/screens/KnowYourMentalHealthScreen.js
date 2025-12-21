@@ -1,16 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   BackHandler,
-  PermissionsAndroid,
   Platform,
   StyleSheet,
   View
 } from "react-native";
-import AudioRecorderPlayer from 'react-native-audio-recorder-player';
-import RNFS from 'react-native-fs';
 import { WebView } from "react-native-webview";
 import { COLORS } from "../utils/constants";
 
@@ -19,82 +17,95 @@ const KnowYourMentalHealthScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const webViewRef = useRef(null);
   const redirectTriggered = useRef(false);
-  const audioRecorderPlayer = useRef(new AudioRecorderPlayer());
-  const isRecording = useRef(false);
-  const recordingPath = useRef('');
+  const [recording, setRecording] = useState(null);
+  const [lastMessageId, setLastMessageId] = useState(0);
 
-  // Request microphone permission for Android
+  // Request microphone permission
   useEffect(() => {
     const requestPermissions = async () => {
-      if (Platform.OS === 'android') {
-        await requestMicrophonePermission();
-      }
+      const { status } = await Audio.requestPermissionsAsync();
+      console.log('Audio permission status:', status);
     };
     requestPermissions();
     
-    // Initialize audio recorder
-    audioRecorderPlayer.current.setSubscriptionDuration(0.1);
-    
     return () => {
-      // Cleanup on unmount
-      if (isRecording.current) {
-        stopNativeRecording();
+      if (recording) {
+        recording.stopAndUnloadAsync();
       }
     };
   }, []);
 
-  const requestMicrophonePermission = async () => {
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        {
-          title: "Microphone Permission",
-          message: "This app needs access to your microphone to record audio.",
-          buttonNeutral: "Ask Me Later",
-          buttonNegative: "Cancel",
-          buttonPositive: "OK"
-        }
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (err) {
-      console.warn(err);
-      return false;
+  // Send message to WebView using injectJavaScript
+  const sendMessageToWebView = (data) => {
+    console.log('Sending to WebView:', data.type);
+    
+    if (!webViewRef.current) {
+      console.error('WebView ref not available');
+      return;
     }
+    
+    const messageId = lastMessageId + 1;
+    setLastMessageId(messageId);
+    
+    // Escape the data for JavaScript injection
+    const escapedData = JSON.stringify(data).replace(/'/g, "\\'");
+    
+    // Inject JavaScript directly - this is MORE RELIABLE than postMessage
+    const jsCode = `
+      try {
+        if (window.handleReactNativeMessage) {
+          window.handleReactNativeMessage(${escapedData});
+        } else {
+          console.warn('handleReactNativeMessage not defined yet');
+          // Store for later
+          window.pendingNativeMessage = ${escapedData};
+        }
+      } catch(e) {
+        console.error('Error in injected JS:', e);
+      }
+    `;
+    
+    webViewRef.current.injectJavaScript(jsCode);
   };
 
-  // Start native audio recording
+  // Start native audio recording in MP3 format
   const startNativeRecording = async () => {
     try {
-      if (Platform.OS === 'android') {
-        const hasPermission = await requestMicrophonePermission();
-        if (!hasPermission) {
-          sendMessageToWebView({
-            type: "RECORDING_ERROR",
-            message: "Microphone permission denied"
-          });
-          return;
-        }
-      }
-
-      const path = Platform.select({
-        ios: 'recording.m4a',
-        android: `${RNFS.ExternalDirectoryPath}/recording.mp3`,
+      console.log('Starting MP3 recording...');
+      
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
       });
 
-      const audioSet = {
-        AudioEncoderAndroid: 3, // AAC
-        AudioSourceAndroid: 1, // MIC
-        AVEncoderAudioQualityKeyIOS: 96, // High quality
-        AVNumberOfChannelsKeyIOS: 2,
-        AVFormatIDKeyIOS: 1819304813, // kAudioFormatMPEG4AAC
+      // Configure for MP3/AAC format
+      const recordingOptions = {
+        android: {
+          extension: '.mp3',
+          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
+          audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 2,
+          bitRate: 128000,
+        },
       };
 
-      recordingPath.current = await audioRecorderPlayer.current.startRecorder(path, audioSet);
-      isRecording.current = true;
-      console.log('Recording started at:', recordingPath.current);
+      const { recording } = await Audio.Recording.createAsync(recordingOptions);
+      setRecording(recording);
+      console.log('Recording started');
       
       sendMessageToWebView({
-        type: "RECORDING_STARTED"
+        type: "RECORDING_STARTED",
+        message: "Recording started... Speak now"
       });
       
     } catch (error) {
@@ -107,93 +118,99 @@ const KnowYourMentalHealthScreen = ({ route, navigation }) => {
   };
 
   // Stop native audio recording
-// Stop native audio recording - ensure this is in your component
-const stopNativeRecording = async () => {
+  const stopNativeRecording = async () => {
     try {
-        console.log('Attempting to stop recording, isRecording:', isRecording.current);
-        
-        if (!isRecording.current) {
-            console.log('No recording in progress');
-            sendMessageToWebView({
-                type: "RECORDING_ERROR",
-                message: "No recording in progress"
-            });
-            return null;
-        }
-        
-        const result = await audioRecorderPlayer.current.stopRecorder();
-        console.log('Recording stopped, result:', result);
-        
-        audioRecorderPlayer.current.removeRecordBackListener();
-        isRecording.current = false;
-        
-        // Read file as base64
-        if (result) {
-            console.log('Reading file as base64...');
-            const fileData = await RNFS.readFile(result, 'base64');
-            
-            sendMessageToWebView({
-                type: "RECORDING_COMPLETE",
-                path: result,
-                base64: fileData,
-                mimeType: Platform.OS === 'ios' ? 'audio/m4a' : 'audio/mp3'
-            });
-            
-            return result;
-        } else {
-            console.error('No result from stopRecorder');
-            sendMessageToWebView({
-                type: "RECORDING_ERROR",
-                message: "Recording stopped but no file was created"
-            });
-            return null;
-        }
-        
-    } catch (error) {
-        console.error('Failed to stop recording:', error);
+      console.log('Stopping recording...');
+      
+      if (!recording) {
         sendMessageToWebView({
-            type: "RECORDING_ERROR",
-            message: error.message
+          type: "RECORDING_ERROR",
+          message: "No recording in progress"
         });
         return null;
-    }
-};
+      }
 
-  // Send message to WebView
-  const sendMessageToWebView = (data) => {
-    if (webViewRef.current) {
-      webViewRef.current.postMessage(JSON.stringify(data));
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      console.log('Recording stopped. URI:', uri);
+      
+      if (uri) {
+        // Convert to base64
+        const base64 = await convertAudioToBase64(uri);
+        console.log('Audio converted to base64, length:', base64?.length || 0);
+        
+        // Determine mime type based on platform
+        const mimeType = Platform.OS === 'ios' ? 'audio/m4a' : 'audio/mp3';
+        
+        sendMessageToWebView({
+          type: "RECORDING_COMPLETE",
+          path: uri,
+          base64: base64,
+          mimeType: mimeType,
+          message: "Recording complete! Click play to listen"
+        });
+        
+        setRecording(null);
+        return uri;
+      }
+      
+    } catch (error) {
+      console.error('Failed to stop recording:', error);
+      sendMessageToWebView({
+        type: "RECORDING_ERROR",
+        message: error.message
+      });
+      return null;
     }
   };
 
-  // Handle messages from WebView
-// In your handleMessage function in React Native:
-const handleMessage = async (event) => {
+  // Convert audio file to base64
+  const convertAudioToBase64 = async (uri) => {
     try {
-        console.log('RAW message from WebView:', event.nativeEvent.data);
-        
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Data = reader.result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Base64 conversion failed:', error);
+      throw error;
+    }
+  };
+
+  const handleMessage = async (event) => {
+    try {
         const data = JSON.parse(event.nativeEvent.data);
-        console.log('Parsed message from WebView:', data);
+        console.log('📱 Message type from WebView:', data.type);
         
         switch (data.type) {
             case "START_RECORDING":
-                console.log('Starting native recording...');
                 await startNativeRecording();
                 break;
                 
             case "STOP_RECORDING":
-                console.log('Stopping native recording...');
                 await stopNativeRecording();
                 break;
                 
             case "UPLOAD_AUDIO":
-                console.log('Uploading audio...');
                 await handleAudioUpload(data.base64, data.mimeType, data.lastId);
                 break;
                 
+            // 🔥 THIS IS THE IMPORTANT PART 🔥
             case "ASSESSMENT_COMPLETE":
-                console.log('Assessment complete, redirecting...');
-                redirectToHome();
+                console.log('🎉 Assessment complete received!');
+                redirectToHome();  // Call the redirect function
+                break;
+                
+            case "DEBUG_LOG":
+                console.log('WebView Log:', data.message);
                 break;
                 
             default:
@@ -201,25 +218,34 @@ const handleMessage = async (event) => {
         }
     } catch (error) {
         console.error('Error processing message:', error);
-        console.log('Failed to parse message:', event.nativeEvent.data);
     }
 };
+  
 
-  // Handle audio upload to server
+  // SIMPLIFIED upload - just use original base64 without WebM conversion
   const handleAudioUpload = async (base64Data, mimeType, lastId) => {
     try {
-      // Create form data
-      const formData = new FormData();
-      const filename = `recording_${Date.now()}.${mimeType.split('/')[1]}`;
+      console.log('📤 Uploading audio (original format)...');
       
-      formData.append('audio_data', {
+      // Use the original format - backend needs to accept it
+      const formData = new FormData();
+      const extension = mimeType === 'audio/m4a' ? 'm4a' : 'mp3';
+      const filename = `recording_${Date.now()}.${extension}`;
+      
+      // Create a simple FormData
+      const file = {
         uri: `data:${mimeType};base64,${base64Data}`,
         type: mimeType,
         name: filename,
-      });
+      };
+      
+      formData.append('audio_data', file);
       formData.append('last_id', lastId || 0);
       
-      const response = await fetch('YOUR_BACKEND_URL/Api/upload_audio', {
+      const backendUrl = 'https://mindyatra.in/Api/upload_audio';
+      console.log('📤 Uploading to:', backendUrl, 'as', extension);
+      
+      const response = await fetch(backendUrl, {
         method: 'POST',
         body: formData,
         headers: {
@@ -227,35 +253,53 @@ const handleMessage = async (event) => {
         },
       });
       
-      const result = await response.json();
-      console.log('Upload response:', result);
+      const resultText = await response.text();
+      console.log('📤 Upload raw response:', resultText);
+      
+      let result;
+      try {
+        result = JSON.parse(resultText);
+      } catch (e) {
+        console.error('Failed to parse JSON:', e);
+        result = { status: 'error', msg: 'Invalid server response: ' + resultText.substring(0, 100) };
+      }
+      
+      console.log('📤 Upload result:', result);
       
       sendMessageToWebView({
         type: "UPLOAD_COMPLETE",
-        data: result
+        data: result,
+        message: result.status === 'success' ? 'Upload successful!' : 'Upload failed'
       });
       
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
       sendMessageToWebView({
         type: "UPLOAD_ERROR",
-        message: error.message
+        message: 'Upload failed: ' + error.message
       });
     }
   };
 
-  const redirectToHome = () => {
+// Add this function if you don't have it
+const redirectToHome = () => {
+    console.log('🚀 Redirecting to homepage...');
+    
     if (redirectTriggered.current) return;
     redirectTriggered.current = true;
     
+    // Store status and navigate
     AsyncStorage.setItem('paid_status', '0')
       .then(() => {
-        console.log("Assessment complete, redirecting to home...");
-        navigation.replace('MainTabs');
+        console.log("✅ Paid status updated, navigating home...");
+        navigation.replace('MainTabs'); // Or whatever your home screen is called
+      })
+      .catch(error => {
+        console.error('❌ Error saving status:', error);
+        navigation.replace('MainTabs'); // Still navigate even if AsyncStorage fails
       });
-  };
+};
 
-  // Handle Android back button
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
@@ -281,43 +325,165 @@ const handleMessage = async (event) => {
     return () => backHandler.remove();
   }, []);
 
-  // JavaScript to inject for audio recording support
-  // Replace the entire injectedJavaScript variable with this:
-const injectedJavaScript = `
+  // SIMPLIFIED JavaScript injection
+  const injectedJavaScript = `
     (function() {
-        // Store audio data
-        window.nativeAudioData = null;
+      console.log('=== WebView Audio Bridge v2 ===');
+      
+      // Global state
+      window.nativeAudioData = null;
+      window.isReactNative = !!window.ReactNativeWebView;
+      
+      // Handle messages from React Native
+      window.handleReactNativeMessage = function(data) {
+        console.log('🎯 React Native message received:', data.type);
         
-        // Audio context fix for iOS
-        document.addEventListener('touchstart', function() {
-            if (window.AudioContext || window.webkitAudioContext) {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
+        switch(data.type) {
+          case 'RECORDING_STARTED':
+            console.log('🎤 Recording started');
+            document.getElementById('recordBtn').textContent = "Recording...";
+            break;
+            
+          case 'RECORDING_COMPLETE':
+            console.log('✅ Recording complete!');
+            window.nativeAudioData = data;
+            
+            // Update UI
+            document.getElementById('recordBtn').textContent = "Start Recording";
+            
+            // Update audio player
+            const audioPlayback = document.getElementById('audioPlayback');
+            if (audioPlayback && data.base64) {
+              console.log('Setting audio source, base64 length:', data.base64.length);
+              
+              // Create data URL
+              const audioUrl = 'data:' + data.mimeType + ';base64,' + data.base64;
+              
+              // Clear and set source
+              audioPlayback.src = '';
+              audioPlayback.src = audioUrl;
+              audioPlayback.style.display = 'block';
+              
+              // Load the audio
+              audioPlayback.load();
+              
+              // Show a message
+              if (data.message) {
+                alert(data.message);
+              }
+              
+              // Try to play (user may need to click)
+              setTimeout(() => {
+                audioPlayback.play().catch(e => {
+                  console.log('Auto-play blocked (normal):', e.message);
+                });
+              }, 500);
             }
-        }, { once: true });
-        
-        console.log('WebView audio bridge injected successfully');
-        
-        // Add event listener for messages from React Native
-        document.addEventListener('message', function(event) {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('Message from React Native:', data);
-                window.dispatchEvent(new MessageEvent('message', { data: event.data }));
-            } catch (e) {
-                console.error('Error processing message:', e);
+            break;
+            
+          case 'UPLOAD_COMPLETE':
+            console.log('📤 Upload complete:', data.data);
+            
+            // Reset button
+            const uploadBtn = document.querySelector('button[onclick="uploadAndNext()"]');
+            if (uploadBtn) {
+              uploadBtn.textContent = "Next ➡️";
+              uploadBtn.disabled = false;
             }
-        });
-        
-        // Initialize ReactNativeWebView communication
-        if (window.ReactNativeWebView) {
-            console.log('ReactNativeWebView detected - using native audio recording');
+            
+            if (data.data.status === 'success') {
+              // Move to next step
+              if (typeof showTransition === 'function') {
+                showTransition(() => {
+                  document.getElementById('step2').style.display = 'none';
+                  document.getElementById('step5').style.display = 'block';
+                });
+              }
+            } else {
+              alert('Upload failed: ' + (data.data.msg || 'Unknown error'));
+            }
+            break;
+            
+          case 'UPLOAD_ERROR':
+          case 'RECORDING_ERROR':
+            console.error('❌ Error:', data.message);
+            alert(data.message || 'An error occurred');
+            
+            // Reset buttons
+            document.getElementById('recordBtn').textContent = "Start Recording";
+            const uploadBtn2 = document.querySelector('button[onclick="uploadAndNext()"]');
+            if (uploadBtn2) {
+              uploadBtn2.textContent = "Next ➡️";
+              uploadBtn2.disabled = false;
+            }
+            break;
         }
+      };
+      
+      // Check for pending messages
+      if (window.pendingNativeMessage) {
+        console.log('Processing pending message');
+        window.handleReactNativeMessage(window.pendingNativeMessage);
+        window.pendingNativeMessage = null;
+      }
+      
+      // Override recording functions if in React Native
+      if (window.isReactNative) {
+        console.log('🔧 Overriding functions for React Native');
+        
+        // Override startRecording
+        const originalStart = window.startRecording;
+        window.startRecording = function() {
+          console.log('Start Recording (React Native)');
+          document.getElementById('recordBtn').textContent = "Recording...";
+          
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: "START_RECORDING"
+          }));
+        };
+        
+        // Override stopRecording
+        const originalStop = window.stopRecording;
+        window.stopRecording = function() {
+          console.log('Stop Recording (React Native)');
+          
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: "STOP_RECORDING"
+          }));
+        };
+        
+        // Override uploadAndNext
+        const originalUpload = window.uploadAndNext;
+        window.uploadAndNext = function() {
+          console.log('Upload and Next (React Native)');
+          
+          if (!window.nativeAudioData || !window.nativeAudioData.base64) {
+            alert("Please record some audio first.");
+            return;
+          }
+          
+          const lastId = document.getElementById('last_notes_id')?.value || 0;
+          const uploadBtn = document.querySelector('button[onclick="uploadAndNext()"]');
+          
+          if (uploadBtn) {
+            uploadBtn.textContent = "Uploading...";
+            uploadBtn.disabled = true;
+          }
+          
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: "UPLOAD_AUDIO",
+            base64: window.nativeAudioData.base64,
+            mimeType: window.nativeAudioData.mimeType,
+            lastId: lastId
+          }));
+        };
+      }
+      
+      console.log('✅ WebView bridge ready');
     })();
     true;
-`;
+  `;
+
   return (
     <View style={styles.container}>
       {loading && (
@@ -325,38 +491,43 @@ const injectedJavaScript = `
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       )}
-// In your return statement, update the WebView component:
-<WebView
-    ref={webViewRef}
-    source={{ uri: url }}
-    javaScriptEnabled={true}
-    domStorageEnabled={true}
-    mediaPlaybackRequiresUserAction={false}
-    allowsInlineMediaPlayback={true}
-    onLoadEnd={() => {
-        setLoading(false);
-        console.log('WebView loaded successfully');
-    }}
-    onMessage={handleMessage}
-    injectedJavaScript={injectedJavaScript}
-    onError={(error) => {
-        console.error("WebView Error:", error);
-        Alert.alert('Error', 'Failed to load page. Please check your internet connection.');
-    }}
-    onHttpError={(error) => {
-        console.error("HTTP Error:", error);
-    }}
-    onContentProcessDidTerminate={() => {
-        console.warn('Content process terminated, reloading...');
-        webViewRef.current?.reload();
-    }}
-    startInLoadingState={true}
-    renderLoading={() => (
-        <View style={styles.loader}>
+
+      <WebView
+        ref={webViewRef}
+        source={{ uri: url }}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        mediaPlaybackRequiresUserAction={false}
+        allowsInlineMediaPlayback={true}
+        onLoadEnd={() => {
+          console.log('✅ WebView loaded');
+          setLoading(false);
+          
+          // Send a test message to verify communication
+          setTimeout(() => {
+            sendMessageToWebView({
+              type: "TEST",
+              message: "WebView communication test"
+            });
+          }, 1000);
+        }}
+        onMessage={handleMessage}
+        injectedJavaScript={injectedJavaScript}
+        onError={(error) => {
+          console.error('❌ WebView error:', error.nativeEvent);
+        }}
+        startInLoadingState={true}
+        renderLoading={() => (
+          <View style={styles.loader}>
             <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-    )}
-/>
+          </View>
+        )}
+        // Enable debugging
+        onContentProcessDidTerminate={() => {
+          console.log('WebView terminated, reloading...');
+          webViewRef.current?.reload();
+        }}
+      />
     </View>
   );
 };
