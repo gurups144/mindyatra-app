@@ -4,6 +4,8 @@ import { ActivityIndicator, View } from "react-native";
 import SplashScreen from "./src/components/SplashScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { authService } from "./src/services/auth";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -68,9 +70,10 @@ export default function App() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <AppNavigator initialRoute={initialRoute} />
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

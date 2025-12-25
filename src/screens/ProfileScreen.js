@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
-  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -37,12 +36,14 @@ const ProfileScreen = ({ navigation }) => {
       // Get email from AsyncStorage
       const email = await AsyncStorage.getItem('email');
       const name = await AsyncStorage.getItem('name') || email?.split('@')[0] || 'User';
+      const userId = await AsyncStorage.getItem('user_id');
       
       if (email) {
         setUser(prev => ({
           ...prev,
           email,
           name,
+          userId,
           country: 'India',
           isPremium: false
         }));
@@ -70,7 +71,17 @@ const ProfileScreen = ({ navigation }) => {
     );
   };
 
+  const handleEditProfile = () => {
+    navigation.navigate('EditProfile');
+  };
+
   const menuItems = [
+    {
+      icon: 'person-outline',
+      title: 'Edit Profile',
+      subtitle: 'Update your personal information',
+      onPress: handleEditProfile,
+    },
     {
       icon: 'notifications-outline',
       title: 'Notifications',
@@ -81,25 +92,25 @@ const ProfileScreen = ({ navigation }) => {
       icon: 'document-text-outline',
       title: 'Terms & Conditions',
       subtitle: 'Read our terms and conditions',
-      onPress: () => Linking.openURL('https://mindyatra.in/Homepage/terms_condition'),
+      onPress: () => navigation.navigate('TermsConditions'),
     },
     {
       icon: 'shield-checkmark-outline',
       title: 'Privacy Policy',
       subtitle: 'Read our privacy policy',
-      onPress: () => Linking.openURL('https://mindyatra.in/Homepage/privacy_policy'),
+      onPress: () => navigation.navigate('PrivacyPolicy'),
     },
     {
       icon: 'help-circle-outline',
       title: 'Help & Support',
       subtitle: 'Get help and contact support',
-      onPress: () => Alert.alert('Help & Support', 'Email: support@mindyatra.com\nPhone: +91 1234567890'),
+      onPress: () => Alert.alert('Help & Support', 'Email: info@mindyatra.in\nPhone: +91 9886668700'),
     },
     {
       icon: 'information-circle-outline',
       title: 'About MindYatra',
       subtitle: 'Learn more about us',
-      onPress: () => Alert.alert('About MindYatra', 'Version 1.0.0\n\nMindYatra is your companion for mental wellness.'),
+      onPress: () => Alert.alert('About MindYatra', 'Version 1.0.0\n\nMindyatra is a mental health and wellness platform dedicated to helping you unlock mental clarity through a unique blend of psychological expertise and AI-powered tools. We also offer soothing music, calming videos, and mindful games to support relaxation and emotional balance, all crafted to make self-care fun, simple, and effective..'),
     },
   ];
 
@@ -114,51 +125,33 @@ const ProfileScreen = ({ navigation }) => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
+        {/* Profile Card - Now clickable for edit */}
+        <TouchableOpacity 
+          style={styles.profileCard}
+          onPress={handleEditProfile}
+          activeOpacity={0.7}
+        >
           <View style={styles.avatar}>
             <Ionicons name="person" size={48} color={COLORS.white} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{user?.name || 'User'}</Text>
+            <View style={styles.nameContainer}>
+              <Text style={styles.userName}>{user?.name || 'User'}</Text>
+              <Ionicons name="pencil" size={16} color={COLORS.primary} style={styles.editIcon} />
+            </View>
             <Text style={styles.userEmail}>{user?.email || 'email@example.com'}</Text>
             <Text style={styles.userCountry}>
               <Ionicons name="location" size={14} color={COLORS.gray} /> {user?.country || 'India'}
             </Text>
+            
+            {/* {user?.userId && (
+              <View style={styles.userIdContainer}>
+                <Text style={styles.userIdText}>ID: {user.userId}</Text>
+              </View>
+            )} */}
           </View>
-        </View>
-
-        {/* Subscription Status */}
-        {/* <View style={[
-          styles.subscriptionCard,
-          { backgroundColor: user?.isPremium ? COLORS.success + '20' : COLORS.warning + '20' }
-        ]}>
-          <View style={styles.subscriptionHeader}>
-            <Ionicons 
-              name={user?.isPremium ? 'star' : 'lock-closed'} 
-              size={32} 
-              color={user?.isPremium ? COLORS.success : COLORS.warning} 
-            />
-            <View style={styles.subscriptionInfo}>
-              <Text style={styles.subscriptionTitle}>
-                {user?.isPremium ? 'Premium Member' : 'Free Member'}
-              </Text>
-              <Text style={styles.subscriptionSubtitle}>
-                {user?.isPremium 
-                  ? 'You have access to all premium features' 
-                  : 'Upgrade to unlock premium features'}
-              </Text>
-            </View>
-          </View>
-          {!user?.isPremium && (
-            <Button
-              title="Upgrade to Premium"
-              onPress={() => navigation.navigate('Subscription')}
-              variant="secondary"
-              style={styles.upgradeButton}
-            />
-          )}
-        </View> */}
+          <Ionicons name="chevron-forward" size={20} color={COLORS.gray} />
+        </TouchableOpacity>
 
         {/* Quick Stats */}
         <View style={styles.statsContainer}>
@@ -186,6 +179,7 @@ const ProfileScreen = ({ navigation }) => {
               key={index}
               style={styles.menuItem}
               onPress={item.onPress}
+              activeOpacity={0.7}
             >
               <View style={styles.menuIconContainer}>
                 <Ionicons name={item.icon} size={24} color={COLORS.primary} />
@@ -260,10 +254,17 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: SIZES.padding,
   },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   userName: {
     fontSize: SIZES.h3,
     fontWeight: 'bold',
     color: COLORS.dark,
+  },
+  editIcon: {
+    marginLeft: 8,
   },
   userEmail: {
     fontSize: SIZES.medium,
@@ -275,32 +276,18 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
     marginTop: 4,
   },
-  subscriptionCard: {
-    marginHorizontal: SIZES.padding,
-    marginBottom: SIZES.padding,
-    padding: SIZES.padding,
-    borderRadius: SIZES.radius,
+  userIdContainer: {
+    marginTop: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
   },
-  subscriptionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  subscriptionInfo: {
-    flex: 1,
-    marginLeft: SIZES.padding,
-  },
-  subscriptionTitle: {
-    fontSize: SIZES.large,
-    fontWeight: 'bold',
-    color: COLORS.dark,
-  },
-  subscriptionSubtitle: {
-    fontSize: SIZES.font,
-    color: COLORS.gray,
-    marginTop: 4,
-  },
-  upgradeButton: {
-    marginTop: SIZES.padding,
+  userIdText: {
+    fontSize: 12,
+    color: COLORS.darkGray,
+    fontFamily: 'monospace',
   },
   statsContainer: {
     flexDirection: 'row',

@@ -284,7 +284,7 @@ const SplashScreenComponent = ({ onAnimationFinish }) => {
               ]}
             />
             <Image
-              source={require("../../assets/images/logo_new.jpeg")}
+              source={require("../../assets/images/logo_new.png")}
               style={styles.logo}
               resizeMode="contain"
             />

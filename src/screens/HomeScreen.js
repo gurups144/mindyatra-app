@@ -468,8 +468,13 @@ onPress={() => {
             {userName}
           </Text>
         </View>
-        <TouchableOpacity style={styles.profileButton}>
-          <MaterialIcons name="person" size={24} color="#4f46e5" />
+        <TouchableOpacity 
+          style={[styles.profileButton, styles.profileInitials]}
+          onPress={() => navigation.navigate('Profile')}
+        >
+          <Text style={styles.profileInitialsText}>
+            {userName ? userName.charAt(0).toUpperCase() : 'U'}
+          </Text>
         </TouchableOpacity>
       </View>
 

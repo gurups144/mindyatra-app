@@ -9,14 +9,17 @@ import { COLORS } from "../utils/constants";
 import ActivityHubScreen from "../screens/ActivityHubScreen";
 import AIAnalysisScreen from "../screens/AIAnalysisScreen";
 import DepressionMeterScreen from "../screens/DepressionMeterScreen";
+import EditProfileScreen from "../screens/EditProfileScreen";
 import HomeScreen from "../screens/HomeScreen";
 import KnowYourMentalHealthScreen from "../screens/KnowYourMentalHealthScreen";
 import LoginScreen from "../screens/LoginScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import PaymentSuccessScreen from "../screens/PaymentSuccessScreen";
 import PayUWebViewScreen from "../screens/PayUWebViewScreen";
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import ProfileScreen from "../screens/ProfileScreen";
 import SubscriptionScreen from "../screens/SubscriptionScreen";
+import TermsConditionsScreen from '../screens/TermsConditionsScreen';
 import UnarathmaScreen from "../screens/UnarathmaScreen";
 
 const Stack = createNativeStackNavigator();
@@ -42,6 +45,7 @@ const MainTabs = () => {
         tabBarActiveTintColor: "#6366f1",
         tabBarInactiveTintColor: "gray",
         headerShown: false,
+        
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
@@ -60,6 +64,7 @@ const AppNavigator = ({ initialRoute }) => {
         headerTintColor: "#fff",
         headerTitleStyle: { fontWeight: "bold" },
         headerBackTitleVisible: false,
+        headerStatusBarHeight: 40,
       }}
     >
       <Stack.Screen
@@ -89,11 +94,31 @@ const AppNavigator = ({ initialRoute }) => {
   }}
 />
 
-      <Stack.Screen
+     <Stack.Screen 
+  name="PrivacyPolicy" 
+  component={PrivacyPolicyScreen}
+  options={{ headerShown: false }}
+/>
+<Stack.Screen 
+  name="TermsConditions" 
+  component={TermsConditionsScreen}
+  options={{ headerShown: false }}
+/>
+
+      
+       <Stack.Screen
         name="DepressionMeter"
         component={DepressionMeterScreen}
         options={{ title: "Depression Assessment" }}
       />
+
+
+
+      <Stack.Screen 
+      name="EditProfile" 
+      component={EditProfileScreen} 
+      options={{ title: "Edit Profile" }}/>
+
 
       <Stack.Screen
   name="PayUWebView"

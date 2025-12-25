@@ -1,188 +1,166 @@
-import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
-import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.9;
 
-
-
-
 const SubscriptionScreen = ({ navigation }) => {
-
-
   const [promoCodeGlobal, setPromoCodeGlobal] = useState('');
   const [promoCodeIndia, setPromoCodeIndia] = useState('');
-
   const [userId, setUserId] = useState(null);
-const [email, setEmail] = useState(null);
-const [token, setToken] = useState(null);
-const [paidStatus, setPaidStatus] = useState(null);
+  const [email, setEmail] = useState(null);
+  const [token, setToken] = useState(null);
+  const [paidStatus, setPaidStatus] = useState(null);
 
-
-  
   useEffect(() => {
     const loadUser = async () => {
       const uid = await AsyncStorage.getItem("user_id");
       const em = await AsyncStorage.getItem("email");
       const tk = await AsyncStorage.getItem("token");
       const ps = await AsyncStorage.getItem("paid_status");
-
       console.log("SUB SCREEN USER:", uid);
-
       setUserId(uid);
       setEmail(em);
       setToken(tk);
       setPaidStatus(ps);
     };
-
     loadUser();
   }, []);
-
-
-
 
   const plans = [
     {
       id: 'global',
-      title: 'Beta version ( Trail plan ) Other Countries',
+      title: 'Mental Health Insight Assessment - Other Countries',
       price: '$50',
-      originalPrice: '@$100',
-      discount: '50% Off – Now Only @$50',
-      description: 'Unlock Mental Clarity – Just $50',
-      subDescription: 'Get personalized mental health insights from your written thoughts or voice notes, with expert feedback in 48 hours.',
+      originalPrice: '$100',
+      discount: '50% off',
       buttonText: 'Coming Soon',
       disabled: true,
     },
     {
       id: 'india',
-      title: 'Beta version ( Trail plan ) India',
-      price: '₹250',
-      originalPrice: '@₹500',
-      discount: '50% Off – Now Only @₹250',
-      description: 'Unlock Mental Clarity – Just ₹250',
-      subDescription: 'Get personalized mental health insights from your written thoughts or voice notes, with expert feedback in 48 hours.',
+      title: 'Mental Health Insight Assessment - India',
+      price: '₹150',
+      originalPrice: '₹300',
+      discount: '50% off',
       buttonText: 'Pay Now',
       disabled: false,
     },
   ];
 
   const features = [
-    'AI + Astro-based mental health insights',
-    'Expert feedback from your voice or writing in 48 hours',
-    '1-day access to our Activity Hub — music, stories & mind games',
+    'Write your thoughts',
+    'Answer a few guided questions',
+    'Submit a short voice recording',
   ];
-const handleSubscribe = async (planId, promoCode) => {
-  // ... existing code ...
 
-  try {
-    console.log("Making payment request...");
-    
-    const response = await fetch("https://mindyatra.in/Api/create_payment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `amount=1&email=${encodeURIComponent(email)}&name=MindYatra User`,
-    });
+  const benefits = [
+    'Personalized psychologist-reviewed report',
+    'AI-based mental insight assessment',
+    'Astro-based personality analysis',
+  ];
 
-    const data = await response.json();
-    console.log("API Response:", JSON.stringify(data, null, 2));
+  const handleSubscribe = async (planId, promoCode) => {
+    try {
+      console.log("Making payment request...");
+      const response = await fetch("https://mindyatra.in/Api/create_payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `amount=1&email=${encodeURIComponent(email)}&name=MindYatra User`,
+      });
 
-    if (data.payu_url && data.params) {
-      console.log("Navigating to PayUWebView...");
-      // Use setTimeout to ensure navigation stack is ready
-      setTimeout(() => {
-        navigation.navigate("PayUWebView", { payuData: data });
-      }, 100);
-    } else {
-      alert("Payment initialization failed: " + JSON.stringify(data));
+      const data = await response.json();
+      console.log("API Response:", JSON.stringify(data, null, 2));
+
+      if (data.payu_url && data.params) {
+        console.log("Navigating to PayUWebView...");
+        setTimeout(() => {
+          navigation.navigate("PayUWebView", { payuData: data });
+        }, 100);
+      } else {
+        alert("Payment initialization failed: " + JSON.stringify(data));
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Something went wrong!");
     }
-  } catch (error) {
-    console.error("Payment error:", error);
-    alert("Something went wrong!");
-  }
-};
-
-
-
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Subscription</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.cardsContainer}>
           {plans.map((plan) => (
             <View key={plan.id} style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>{plan.title}</Text>
               </View>
-              
+
               <View style={styles.cardBody}>
-                <Text style={styles.price}>{plan.price}</Text>
-                
-                <View style={styles.discountContainer}>
-                  <Text style={styles.discountEmoji}>🎉</Text>
-                  <Text style={styles.discountText}>
-                    {plan.discount} <Text style={styles.originalPrice}>{plan.originalPrice}</Text>
-                  </Text>
+                <View style={styles.priceSection}>
+                  <Text style={styles.priceLabel}>💰 Price:</Text>
+                  <View style={styles.priceRow}>
+                    <Text style={styles.originalPrice}>{plan.originalPrice}</Text>
+                    <Text style={styles.discountBadge}>{plan.discount}</Text>
+                  </View>
+                  <Text style={styles.price}>{plan.price}</Text>
                 </View>
 
-                <Text style={styles.descriptionBold}>{plan.description}</Text>
-                <Text style={styles.description}>{plan.subDescription}</Text>
-
-                <Text style={styles.featuresTitle}>What's included:</Text>
-
-                <View style={styles.featuresList}>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>✔ What You Do:</Text>
                   {features.map((feature, index) => (
                     <View key={index} style={styles.featureItem}>
-                      <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
+                      <Text style={styles.bullet}>✔</Text>
                       <Text style={styles.featureText}>{feature}</Text>
                     </View>
                   ))}
                 </View>
 
-                <Text style={styles.journeyText}>
-                  Start your journey to clarity — simple, personalized, and judgment-free.
-                </Text>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>🔍 You Receive:</Text>
+                  {benefits.map((benefit, index) => (
+                    <View key={index} style={styles.featureItem}>
+                      <Text style={styles.bullet}>*</Text>
+                      <Text style={styles.featureText}>{benefit}</Text>
+                    </View>
+                  ))}
+                </View>
 
-                <TextInput
-                  style={styles.promoInput}
-                  placeholder="Enter Promo Code (if any)"
-                  value={plan.id === 'global' ? promoCodeGlobal : promoCodeIndia}
-                  onChangeText={plan.id === 'global' ? setPromoCodeGlobal : setPromoCodeIndia}
-                />
+                <View style={styles.emailNotice}>
+                  <Text style={styles.emailNoticeText}>
+                    📩 The analysis report will be sent to your email within 24 hours.
+                  </Text>
+                </View>
+
+                <View style={styles.noteSection}>
+                  <Text style={styles.noteTitle}>📌 Note:</Text>
+                  <Text style={styles.noteText}>
+                    This is a non-clinical assessment meant for self-awareness and initial analytical understanding only.
+                  </Text>
+                  <Text style={styles.noteText}>
+                    💬 For counseling or therapy, we strongly recommend booking a professional appointment.
+                  </Text>
+                </View>
+
+                <View style={styles.betaNotice}>
+                  <Text style={styles.betaText}>
+                    🔗 To book an appointment and explore more features, visit{' '}
+                    <Text style={styles.linkText}>mindyatra.in</Text>.
+                  </Text>
+                  <Text style={styles.betaText}>
+                    This application is currently in its beta version.
+                  </Text>
+                </View>
 
                 <TouchableOpacity
-                  style={[
-                    styles.subscribeButton,
-                    plan.disabled && styles.disabledButton
-                  ]}
+                  style={[styles.subscribeButton, plan.disabled && styles.disabledButton]}
                   onPress={() => handleSubscribe(plan.id, plan.id === 'global' ? promoCodeGlobal : promoCodeIndia)}
                   disabled={plan.disabled}
                 >
-                  <Text style={styles.subscribeButtonText}>
-                    {plan.buttonText}
-                  </Text>
+                  <Text style={styles.subscribeButtonText}>{plan.buttonText}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -197,22 +175,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
   },
   scrollContent: {
     paddingVertical: 20,
@@ -249,83 +211,111 @@ const styles = StyleSheet.create({
   cardBody: {
     padding: 20,
   },
-  price: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginVertical: 10,
+  priceSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
-  discountContainer: {
+  priceLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 15,
-  },
-  discountEmoji: {
-    fontSize: 16,
-    marginRight: 5,
-  },
-  discountText: {
-    fontSize: 13,
-    color: '#333',
-    fontWeight: '600',
+    marginBottom: 5,
   },
   originalPrice: {
-    textDecorationLine: 'line-through',
+    fontSize: 16,
     color: '#999',
+    textDecorationLine: 'line-through',
+    marginRight: 10,
   },
-  descriptionBold: {
+  discountBadge: {
+    fontSize: 13,
+    color: '#E91E63',
+    fontWeight: 'bold',
+  },
+  price: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: '#E91E63',
+  },
+  section: {
+    marginBottom: 15,
+  },
+  sectionTitle: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
-    textAlign: 'center',
     marginBottom: 10,
-  },
-  description: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 15,
-  },
-  featuresTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  featuresList: {
-    marginBottom: 15,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 10,
+    marginBottom: 8,
+    paddingLeft: 10,
+  },
+  bullet: {
+    fontSize: 12,
+    color: '#555',
+    marginRight: 8,
+    lineHeight: 18,
   },
   featureText: {
-    marginLeft: 8,
     fontSize: 12,
     color: '#555',
     flex: 1,
     lineHeight: 18,
   },
-  journeyText: {
+  emailNotice: {
+    backgroundColor: '#f0f8ff',
+    padding: 12,
+    borderRadius: 6,
+    marginVertical: 15,
+  },
+  emailNoticeText: {
     fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
+    color: '#333',
     lineHeight: 18,
+  },
+  noteSection: {
+    backgroundColor: '#fff9e6',
+    padding: 12,
+    borderRadius: 6,
     marginBottom: 15,
   },
-  promoInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
-    padding: 12,
+  noteTitle: {
     fontSize: 13,
-    backgroundColor: '#fff',
-    marginBottom: 15,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  noteText: {
+    fontSize: 11,
+    color: '#555',
+    lineHeight: 17,
+    marginBottom: 5,
+  },
+  betaNotice: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 20,
+  },
+  betaText: {
+    fontSize: 11,
+    color: '#666',
+    lineHeight: 17,
+    marginBottom: 4,
+  },
+  linkText: {
+    color: '#E91E63',
+    fontWeight: '600',
   },
   subscribeButton: {
     backgroundColor: '#E91E63',
@@ -340,7 +330,7 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: '#E91E63',
-    opacity: 1,
+    opacity: 0.6,
   },
 });
 

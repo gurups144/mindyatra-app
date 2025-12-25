@@ -9,7 +9,6 @@ import { Image } from 'react-native';
 import {
   Alert,
   KeyboardAvoidingView,
-  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -22,7 +21,6 @@ import Button from "../components/Button";
 import { authService } from "../services/auth";
 import { COLORS, SIZES } from "../utils/constants";
 import { validateEmail } from "../utils/validation";
-// import * as AuthSession from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -220,212 +218,223 @@ if (data.success) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Image 
-            source={require('../../assets/images/logo_new.jpeg')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>MindYatra</Text>
-          <Text style={styles.subtitle}>Your Mental Wellness Journey</Text>
-        </View>
-
-        {step === 1 && (
-          <View style={styles.form}>
-            <Text style={styles.formTitle}>Login / Sign Up</Text>
-            <Text style={styles.formSubtitle}>
-              Enter your Gmail to continue
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color={COLORS.gray}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="your.email@gmail.com"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setErrors({ ...errors, email: null });
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-            {errors.email && (
-              <Text style={styles.errorText}>{errors.email}</Text>
-            )}
-
-            <Button
-              title="Continue"
-              onPress={handleContinue}
-              loading={loading}
-              style={styles.loginButton}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.contentWrapper}>
+          {/* Header with Logo */}
+          <View style={styles.header}>
+            <Image 
+              source={require('../../assets/images/logo_new.png')} 
+              style={styles.logo}
+              resizeMode="contain"
             />
-
-            {/* <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.divider} />
-            </View>
-
-            <TouchableOpacity
-              style={styles.googleButton}
-              onPress={() => promptAsync()}
-              disabled={!request || loading}
-            >
-              <Ionicons name="logo-google" size={20} color="#DB4437" />
-              <Text style={styles.googleButtonText}>Sign in with Google</Text>
-            </TouchableOpacity> */}
+            <Text style={styles.title}>MindYatra</Text>
+            <Text style={styles.subtitle}>Your Mental Wellness Journey</Text>
           </View>
-        )}
 
-        {step === 1.5 && (
-          <View style={styles.form}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setStep(1)}
-            >
-              <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
-            </TouchableOpacity>
-
-            <Text style={styles.formTitle}>Welcome to MindYatra!</Text>
-            <Text style={styles.formSubtitle}>
-              You're signing up as a new user
-            </Text>
-
-            <View style={styles.emailDisplay}>
-              <Ionicons name="mail" size={20} color={COLORS.primary} />
-              <Text style={styles.emailDisplayText}>{email}</Text>
-            </View>
-
-            <View style={styles.termsContainer}>
-              <TouchableOpacity
-                style={styles.checkbox}
-                onPress={() => setAgreedToTerms(!agreedToTerms)}
-              >
-                <Ionicons
-                  name={agreedToTerms ? "checkbox" : "square-outline"}
-                  size={24}
-                  color={agreedToTerms ? COLORS.primary : COLORS.gray}
-                />
-              </TouchableOpacity>
-              <Text style={styles.termsText}>
-                I agree to the{" "}
-                <Text 
-                  style={styles.termsLink}
-                  onPress={() => Linking.openURL('https://mindyatra.in/Homepage/terms_condition')}
-                >
-                  Terms and Conditions
-                </Text>{" "}
-                and{" "}
-                <Text 
-                  style={styles.termsLink}
-                  onPress={() => Linking.openURL('https://mindyatra.in/Homepage/privacy_policy')}
-                >
-                  Privacy Policy
+          {/* Form Sections */}
+          <View style={styles.formContainer}>
+            {step === 1 && (
+              <View style={styles.form}>
+                <Text style={styles.formTitle}>Login / Sign Up</Text>
+                <Text style={styles.formSubtitle}>
+                  Enter your Gmail to continue
                 </Text>
-              </Text>
-            </View>
 
-            <Button
-              title="Send OTP"
-              onPress={handleSendOTP}
-              loading={loading}
-              disabled={!agreedToTerms}
-              style={styles.loginButton}
-            />
-          </View>
-        )}
+                <View style={styles.inputContainer}>
+                  <Ionicons
+                    name="mail-outline"
+                    size={20}
+                    color={COLORS.gray}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="your.email@gmail.com"
+                    value={email}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      setErrors({ ...errors, email: null });
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+                {errors.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                )}
 
-        {step === 2 && (
-          <View style={styles.form}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setStep(isNewUser ? 1.5 : 1)}
-            >
-              <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
-            </TouchableOpacity>
-
-            <Text style={styles.formTitle}>Verify OTP</Text>
-            <Text style={styles.formSubtitle}>
-              We've sent a 6-digit code to{"\n"}
-              {email}
-            </Text>
-
-            <View style={styles.otpContainer}>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="key-outline"
-                  size={20}
-                  color={COLORS.gray}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter 6-digit OTP"
-                  value={otp}
-                  onChangeText={(text) => {
-                    setOtp(text);
-                    setErrors({ ...errors, otp: null });
-                  }}
-                  keyboardType="number-pad"
-                  maxLength={6}
+                <Button
+                  title="Continue"
+                  onPress={handleContinue}
+                  loading={loading}
+                  style={styles.loginButton}
                 />
               </View>
-              {errors.otp && <Text style={styles.errorText}>{errors.otp}</Text>}
-            </View>
+            )}
 
-            <Button
-              title={isNewUser ? "Login" : "Login"}
-              onPress={handleVerifyOTP}
-              loading={loading}
-              style={styles.loginButton}
-            />
+            {step === 1.5 && (
+              <View style={styles.form}>
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={() => setStep(1)}
+                >
+                  <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+                </TouchableOpacity>
 
-            <TouchableOpacity
-  style={styles.resendContainer}
-  onPress={async () => {
-    try {
-      setLoading(true);
+                <Text style={styles.formTitle}>Welcome to MindYatra!</Text>
+                <Text style={styles.formSubtitle}>
+                  You're signing up as a new user
+                </Text>
 
-      const res = await fetch(
-        "https://mindyatra.in/Api/sendmail_otp_host_login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `email=${encodeURIComponent(email)}`,
-        }
-      );
+                <View style={styles.emailDisplay}>
+                  <Ionicons name="mail" size={20} color={COLORS.primary} />
+                  <Text style={styles.emailDisplayText}>{email}</Text>
+                </View>
 
-      const result = await res.text();
+                <View style={styles.termsContainer}>
+                  <TouchableOpacity
+                    style={styles.checkbox}
+                    onPress={() => setAgreedToTerms(!agreedToTerms)}
+                  >
+                    <Ionicons
+                      name={agreedToTerms ? "checkbox" : "square-outline"}
+                      size={24}
+                      color={agreedToTerms ? COLORS.primary : COLORS.gray}
+                    />
+                  </TouchableOpacity>
+                  <Text style={styles.termsText}>
+                    I agree to the{" "}
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('TermsConditions')}
+                    >
+                      <Text style={styles.termsLink}>
+                        Terms and Conditions
+                      </Text>
+                    </TouchableOpacity>{" "}
+                    and{" "}
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('PrivacyPolicy')}
+                    >
+                      <Text style={styles.termsLink}>
+                        Privacy Policy
+                      </Text>
+                    </TouchableOpacity>
+                  </Text>
+                </View>
 
-      if (result === "1") {
-        Alert.alert("OTP Sent", "A new OTP has been sent to your email.");
-      } else if (result === "3") {
-        Alert.alert("Email Not Found", "This email does not exist.");
-      } else {
-        Alert.alert("Error", "Failed to resend OTP.");
-      }
-    } catch (error) {
-      console.log("Resend OTP Error:", error);
-      Alert.alert("Error", "Unable to resend OTP");
-    } finally {
-      setLoading(false);
-    }
-  }}
->
-  <Text style={styles.resendText}>Didn't receive the code? </Text>
-  <Text style={styles.resendLink}>Resend OTP</Text>
-</TouchableOpacity>
+                {/* <View style={styles.termsButtonsContainer}>
+                  <TouchableOpacity
+                    style={styles.termsButton}
+                    onPress={() => navigation.navigate('TermsConditions')}
+                  >
+                    <Text style={styles.termsButtonText}>View Terms & Conditions</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.termsButton}
+                    onPress={() => navigation.navigate('PrivacyPolicy')}
+                  >
+                    <Text style={styles.termsButtonText}>View Privacy Policy</Text>
+                  </TouchableOpacity>
+                </View> */}
 
+                <Button
+                  title="Send OTP"
+                  onPress={handleSendOTP}
+                  loading={loading}
+                  disabled={!agreedToTerms}
+                  style={styles.loginButton}
+                />
+              </View>
+            )}
+
+            {step === 2 && (
+              <View style={styles.form}>
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={() => setStep(isNewUser ? 1.5 : 1)}
+                >
+                  <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+                </TouchableOpacity>
+
+                <Text style={styles.formTitle}>Verify OTP</Text>
+                <Text style={styles.formSubtitle}>
+                  We've sent a 6-digit code to{"\n"}
+                  {email}
+                </Text>
+
+                <View style={styles.otpContainer}>
+                  <View style={styles.inputContainer}>
+                    <Ionicons
+                      name="key-outline"
+                      size={20}
+                      color={COLORS.gray}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter 6-digit OTP"
+                      value={otp}
+                      onChangeText={(text) => {
+                        setOtp(text);
+                        setErrors({ ...errors, otp: null });
+                      }}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                    />
+                  </View>
+                  {errors.otp && <Text style={styles.errorText}>{errors.otp}</Text>}
+                </View>
+
+                <Button
+                  title={isNewUser ? "Login" : "Login"}
+                  onPress={handleVerifyOTP}
+                  loading={loading}
+                  style={styles.loginButton}
+                />
+
+                <TouchableOpacity
+                  style={styles.resendContainer}
+                  onPress={async () => {
+                    try {
+                      setLoading(true);
+
+                      const res = await fetch(
+                        "https://mindyatra.in/Api/sendmail_otp_host_login",
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                          body: `email=${encodeURIComponent(email)}`,
+                        }
+                      );
+
+                      const result = await res.text();
+
+                      if (result === "1") {
+                        Alert.alert("OTP Sent", "A new OTP has been sent to your email.");
+                      } else if (result === "3") {
+                        Alert.alert("Email Not Found", "This email does not exist.");
+                      } else {
+                        Alert.alert("Error", "Failed to resend OTP.");
+                      }
+                    } catch (error) {
+                      console.log("Resend OTP Error:", error);
+                      Alert.alert("Error", "Unable to resend OTP");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  <Text style={styles.resendText}>Didn't receive the code? </Text>
+                  <Text style={styles.resendLink}>Resend OTP</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-        )}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -438,48 +447,67 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
+    minHeight: '100%',
+  },
+  contentWrapper: {
+    flex: 1,
+    justifyContent: 'center',
     padding: SIZES.padding * 2,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 40,
+    marginTop: 20,
   },
   logo: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,  // Makes it circular
-    marginBottom: 15,
-    borderWidth: 2,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    marginBottom: 20,
+    borderWidth: 3,
     borderColor: COLORS.primary,
-    overflow: 'hidden', // Ensures the image stays within the circular boundary
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
   },
   title: {
-    fontSize: SIZES.h1,
+    fontSize: SIZES.h1 * 1.2,
     fontWeight: "bold",
     color: COLORS.primary,
-    marginTop: SIZES.padding,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: SIZES.medium,
     color: COLORS.gray,
-    marginTop: SIZES.base,
+    textAlign: 'center',
+  },
+  formContainer: {
+    width: '100%',
   },
   form: {
-    flex: 1,
+    width: '100%',
   },
   formTitle: {
     fontSize: SIZES.h2,
     fontWeight: "bold",
     color: COLORS.dark,
     marginBottom: SIZES.base,
+    textAlign: 'center',
   },
   formSubtitle: {
     fontSize: SIZES.medium,
     color: COLORS.gray,
     marginBottom: SIZES.padding * 2,
+    textAlign: 'center',
+    lineHeight: 22,
   },
   backButton: {
     marginBottom: SIZES.padding,
+    padding: 4,
   },
   inputContainer: {
     flexDirection: "row",
@@ -490,6 +518,7 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.padding,
     borderWidth: 1,
     borderColor: COLORS.lightGray,
+    height: 56,
   },
   inputIcon: {
     marginRight: SIZES.base,
@@ -499,6 +528,7 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.padding,
     fontSize: SIZES.medium,
     color: COLORS.dark,
+    height: '100%',
   },
   errorText: {
     color: COLORS.danger,
@@ -536,6 +566,7 @@ const styles = StyleSheet.create({
     borderRadius: SIZES.radius,
     paddingVertical: SIZES.padding,
     marginBottom: SIZES.padding,
+    height: 56,
   },
   googleButtonText: {
     fontSize: SIZES.medium,
@@ -576,9 +607,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     marginBottom: SIZES.padding,
+    paddingHorizontal: SIZES.base,
   },
   checkbox: {
     marginRight: SIZES.base,
+    marginTop: 2,
   },
   termsText: {
     flex: 1,
@@ -590,6 +623,25 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: "600",
   },
+  termsButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.padding,
+    gap: SIZES.base,
+  },
+  termsButton: {
+    flex: 1,
+    paddingVertical: SIZES.base,
+    paddingHorizontal: SIZES.base,
+    alignItems: 'center',
+  },
+  termsButtonText: {
+    fontSize: SIZES.small,
+    color: COLORS.primary,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+    textAlign: 'center',
+  },
   otpContainer: {
     marginTop: SIZES.padding,
   },
@@ -597,6 +649,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     marginTop: SIZES.padding * 2,
+    paddingVertical: SIZES.base,
   },
   resendText: {
     fontSize: SIZES.medium,
